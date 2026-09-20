@@ -1,0 +1,25 @@
+{
+  "name": "Afvigelsesskema",
+  "short_name": "Afvigelser",
+  "description": "Registrér afvigelser med foto, tid og beskrivelse, og gem dem som PDF.",
+  "lang": "da",
+  "start_url": "./index.html",
+  "scope": "./",
+  "id": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1f2a30",
+  "theme_color": "#1f2a30",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ny afvigelse",
+      "short_name": "Ny",
+      "url": "./index.html?ny=1",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

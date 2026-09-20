@@ -1,0 +1,2001 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f2a30">
+<meta name="color-scheme" content="light">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Afvigelser">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Afvigelsesskema</title>
+<style>
+  :root {
+    --sort: #1f2a30;
+    --stal: #3a464d;
+    --graa: #6b7880;
+    --lys: #eef1f2;
+    --kant: #d5dbde;
+    --gul: #f2b705;
+    --hvid: #ffffff;
+    --rod: #c8302c;
+    --gron: #3a8f5c;
+    --bla: #2b6cb0;
+    --radius: 14px;
+    --kond: "Roboto Condensed", "Arial Narrow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { background: var(--lys); }
+  body {
+    margin: 0; min-height: 100vh; color: var(--sort);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px; line-height: 1.4;
+  }
+  #app { max-width: 640px; margin: 0 auto; padding-bottom: 110px; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  h1, h2, h3, h4 { margin: 0; font-family: var(--kond); }
+
+  /* ---------- top ---------- */
+  header {
+    position: sticky; top: 0; z-index: 20;
+    background: var(--sort); color: #fff;
+    padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  header::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 6px;
+    background: repeating-linear-gradient(-45deg, var(--gul) 0 10px, var(--sort) 10px 20px);
+  }
+  header h1 { flex: 1; font-size: 26px; font-weight: 800; letter-spacing: .2px; }
+  header h1 small { display: block; font-size: 13px; font-weight: 500; opacity: .7; letter-spacing: 0; }
+  .ikonknap {
+    width: 42px; height: 42px; border: 0; border-radius: 12px; padding: 0;
+    background: rgba(255,255,255,.12); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ikonknap:active { background: rgba(255,255,255,.22); }
+  svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  [hidden] { display: none !important; }
+
+  main { padding: 16px 14px 0; }
+
+  /* ---------- liste ---------- */
+  .fliser { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .flise {
+    border: 2px solid transparent; background: var(--hvid); border-radius: var(--radius);
+    padding: 10px 6px 8px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,.06);
+  }
+  .flise b { display: block; font-family: var(--kond); font-size: 30px; line-height: 1; font-weight: 800; }
+  .flise span { font-size: 12.5px; color: var(--graa); }
+  .flise.valgt { border-color: var(--sort); }
+  .flise.f-aaben b { color: var(--rod); }
+  .flise.f-igang b { color: var(--bla); }
+  .flise.f-lukket b { color: var(--gron); }
+
+  .alvorbar { margin: 14px 2px 4px; }
+  .alvorbar .bar { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: var(--kant); }
+  .alvorbar .bar i { display: block; height: 100%; }
+  .alvorbar .forklar { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-size: 12.5px; color: var(--graa); }
+  .alvorbar .forklar span::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--c); margin-right: 5px; }
+
+  .soeg { position: relative; margin: 14px 0 12px; }
+  .soeg input { padding-left: 42px; }
+  .soeg svg { position: absolute; left: 13px; top: 13px; color: var(--graa); }
+
+  .kort {
+    display: flex; gap: 12px; background: var(--hvid); border-radius: var(--radius);
+    margin-bottom: 10px; padding: 10px 12px 10px 10px; cursor: pointer;
+    border-left: 7px solid var(--c); box-shadow: 0 1px 3px rgba(0,0,0,.07);
+  }
+  .kort:active { background: #f7f9f9; }
+  .thumb {
+    width: 76px; height: 76px; border-radius: 10px; flex: none; background: var(--lys) center/cover no-repeat;
+    display: flex; align-items: center; justify-content: center; color: #aab4ba;
+  }
+  .kort .tekst { min-width: 0; flex: 1; }
+  .kort .nr { font-size: 12.5px; color: var(--graa); }
+  .kort h3 { font-size: 20px; line-height: 1.15; margin: 1px 0 6px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .badges { display: flex; flex-wrap: wrap; gap: 5px; }
+  .badge {
+    display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 12.5px; font-weight: 700;
+    background: var(--c); color: #fff; font-family: var(--kond); letter-spacing: .3px;
+  }
+  .badge.udfyldt { background: transparent; color: var(--c); box-shadow: inset 0 0 0 1.5px var(--c); }
+  .badge.graa { background: var(--lys); color: var(--stal); }
+
+  .tom { text-align: center; padding: 34px 20px; color: var(--graa); }
+  .tom svg { width: 150px; height: auto; margin-bottom: 10px; }
+  .tom h3 { color: var(--sort); font-size: 22px; margin-bottom: 4px; }
+
+  .fab {
+    position: fixed; z-index: 15; right: max(16px, calc(50% - 304px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    display: flex; align-items: center; gap: 8px; border: 0; border-radius: 30px;
+    background: var(--gul); color: var(--sort); font-weight: 800; font-size: 18px; font-family: var(--kond);
+    padding: 14px 22px 14px 16px; box-shadow: 0 6px 18px rgba(0,0,0,.28);
+  }
+  .fab:active { transform: translateY(1px); }
+
+  /* ---------- formular ---------- */
+  .blok { background: var(--hvid); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+  .blok > h4 { font-size: 15px; text-transform: uppercase; letter-spacing: .8px; color: var(--graa); margin-bottom: 10px; }
+  label.felt { display: block; margin-bottom: 12px; font-weight: 600; font-size: 14.5px; }
+  label.felt:last-child { margin-bottom: 0; }
+  label.felt > span { display: block; margin-bottom: 4px; }
+  input[type=text], input[type=search], input[type=datetime-local], select, textarea {
+    width: 100%; font: inherit; color: inherit; background: var(--lys);
+    border: 2px solid transparent; border-radius: 10px; padding: 11px 12px; font-weight: 400;
+  }
+  textarea { min-height: 96px; resize: vertical; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--sort); background: #fff; }
+  .to { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .valg { display: grid; gap: 8px; position: relative; }
+  .valg.fire { grid-template-columns: repeat(4, 1fr); }
+  .valg.tre { grid-template-columns: repeat(3, 1fr); }
+  .valg input { position: absolute; opacity: 0; pointer-events: none; }
+  .valg label {
+    text-align: center; padding: 11px 4px; border-radius: 10px; background: var(--lys);
+    font-family: var(--kond); font-weight: 700; font-size: 16px; border: 2px solid transparent; cursor: pointer;
+  }
+  .valg label::before { content: ""; display: block; height: 5px; border-radius: 3px; background: var(--c); margin: 0 auto 7px; width: 60%; }
+  .valg input:checked + label { background: var(--c); color: #fff; }
+  .valg input:checked + label::before { background: rgba(255,255,255,.75); }
+  .valg input:focus-visible + label { outline: 3px solid var(--sort); outline-offset: 2px; }
+
+  .fotoraekke { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+  .fotoraekke:empty { display: none; }
+  .foto { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: var(--lys); }
+  .foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .foto .x {
+    position: absolute; top: 5px; right: 5px; width: 30px; height: 30px; border-radius: 50%;
+    border: 0; background: rgba(31,42,48,.8); color: #fff; padding: 0; display: flex; align-items: center; justify-content: center;
+  }
+  .foto .x svg { width: 16px; height: 16px; }
+  .foto .n { position: absolute; left: 6px; bottom: 5px; background: rgba(31,42,48,.75); color: #fff; font-size: 12px; padding: 1px 7px; border-radius: 10px; }
+
+  .knapper { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .knap {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    border: 0; border-radius: 12px; padding: 13px 14px; font-weight: 700; font-size: 17px;
+    background: var(--sort); color: #fff; font-family: var(--kond); letter-spacing: .2px;
+  }
+  .knap:active { filter: brightness(1.2); }
+  .knap.gul { background: var(--gul); color: var(--sort); }
+  .knap.lys { background: var(--lys); color: var(--sort); box-shadow: inset 0 0 0 2px var(--kant); }
+  .knap.rod { background: #fff; color: var(--rod); box-shadow: inset 0 0 0 2px #efc4c2; }
+  .knap.bred { grid-column: 1 / -1; }
+
+  .bund {
+    position: fixed; z-index: 15; left: 0; right: 0; bottom: 0; background: rgba(238,241,242,.96);
+    backdrop-filter: blur(6px); padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--kant);
+  }
+  .bund .knapper { max-width: 640px; margin: 0 auto; grid-template-columns: 1fr 2fr; }
+
+  /* ---------- detalje ---------- */
+  .hero { background: var(--hvid); border-radius: var(--radius); padding: 16px 14px 14px; margin-bottom: 12px; border-top: 8px solid var(--c); box-shadow: 0 1px 3px rgba(0,0,0,.07); }
+  .hero h2 { font-size: 28px; line-height: 1.1; margin: 8px 0 12px; font-weight: 800; }
+  .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+  .meta div { font-size: 15px; }
+  .meta small { display: block; font-size: 12px; color: var(--graa); text-transform: uppercase; letter-spacing: .6px; }
+  .tekstblok { white-space: pre-wrap; word-wrap: break-word; }
+  .tekstblok.tomt { color: var(--graa); font-style: italic; }
+  .fotogitter { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .fotogitter button { border: 0; padding: 0; background: none; border-radius: 10px; overflow: hidden; aspect-ratio: 4/3; }
+  .fotogitter img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  /* ---------- lag ---------- */
+  .lag { position: fixed; inset: 0; z-index: 50; background: rgba(20,26,30,.55); display: flex; align-items: flex-end; justify-content: center; }
+  .ark { width: 100%; max-width: 640px; background: var(--lys); border-radius: 20px 20px 0 0; padding: 16px 14px calc(16px + env(safe-area-inset-bottom, 0px)); }
+  .ark h3 { font-size: 22px; margin-bottom: 12px; }
+  .ark .knapper { grid-template-columns: 1fr; margin-top: 4px; }
+  .ark .hint { font-size: 13px; color: var(--graa); margin: 8px 2px 0; }
+  #lightbox { z-index: 60; background: rgba(10,14,16,.94); align-items: center; }
+  #lightbox img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  #toast {
+    position: fixed; z-index: 70; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+    background: var(--sort); color: #fff; padding: 11px 18px; border-radius: 24px; font-size: 15px; max-width: 90%; text-align: center;
+    box-shadow: 0 6px 20px rgba(0,0,0,.3);
+  }
+
+
+  /* ---------- tegneværktøj ---------- */
+  .foto .pen {
+    position: absolute; right: 5px; bottom: 5px; height: 30px; padding: 0 10px 0 8px; border-radius: 15px; border: 0;
+    background: var(--gul); color: var(--sort); font-weight: 800; font-size: 13px; font-family: var(--kond);
+    display: flex; align-items: center; gap: 4px;
+  }
+  .foto .pen svg { width: 16px; height: 16px; stroke-width: 2.4; }
+  #tegn { position: fixed; inset: 0; z-index: 80; background: #10161a; color: #fff; display: flex; flex-direction: column; touch-action: none; }
+  .tegn-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 8px; }
+  .tegn-top span { font-family: var(--kond); font-size: 19px; font-weight: 700; }
+  .tegn-top .knap { padding: 9px 16px; font-size: 16px; }
+  #tegnOmraade { flex: 1; min-height: 0; position: relative; overflow: hidden; touch-action: none; }
+  #tegnCv { position: absolute; transform-origin: 0 0; touch-action: none; border-radius: 4px; box-shadow: 0 4px 24px rgba(0,0,0,.5); background: #000; }
+  .tegn-bund { padding: 8px 12px calc(12px + env(safe-area-inset-bottom, 0px)); background: #182026; }
+  .tegn-bund .rk { display: flex; gap: 8px; align-items: center; justify-content: center; }
+  .tegn-bund .rk + .rk { margin-top: 10px; }
+  .vt {
+    flex: 1; min-width: 0; border: 0; border-radius: 12px; padding: 8px 2px; background: rgba(255,255,255,.1); color: #fff;
+    display: flex; flex-direction: column; align-items: center; gap: 2px; font-family: var(--kond); font-weight: 700; font-size: 13px;
+  }
+  .vt.aktiv { background: var(--gul); color: var(--sort); }
+  .farve { width: 38px; height: 38px; flex: none; border-radius: 50%; border: 3px solid transparent; background: var(--c); padding: 0; box-shadow: inset 0 0 0 2px rgba(0,0,0,.25); }
+  .farve.aktiv { border-color: #fff; }
+  .handl { flex: 1; min-width: 0; border: 0; border-radius: 12px; padding: 6px 2px; background: rgba(255,255,255,.1); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: var(--kond); font-weight: 700; font-size: 13px; }
+  .handl svg { width: 20px; height: 20px; }
+  .handl:disabled { opacity: .35; }
+
+  .zoomk { position: absolute; top: 8px; right: 8px; z-index: 3; display: flex; flex-direction: column; gap: 6px; }
+  .zoomk button { width: 42px; height: 42px; border: 0; border-radius: 12px; background: rgba(16,22,26,.78); color: #fff; font-size: 24px; font-weight: 700; font-family: var(--kond); padding: 0; line-height: 1; }
+  .zoomk #zoomTal { font-size: 14px; }
+  .zoomk button:active { background: rgba(60,72,80,.95); }
+  #tegnHint { padding: 5px 14px 6px; font-size: 13px; text-align: center; color: rgba(255,255,255,.65); background: #10161a; min-height: 26px; }
+  #tegnTekst { display: flex; gap: 8px; padding: 8px 12px; background: #182026; border-top: 1px solid rgba(255,255,255,.08); }
+  #tegnTekst input { flex: 1; min-width: 0; background: rgba(255,255,255,.12); color: #fff; border: 2px solid transparent; border-radius: 10px; padding: 10px 12px; font: inherit; }
+  #tegnTekst input::placeholder { color: rgba(255,255,255,.5); }
+  #tegnTekst input:focus { outline: none; border-color: var(--gul); }
+  #tegnTekst .knap { padding: 10px 18px; font-size: 16px; }
+
+  .knap:disabled { opacity: .4; pointer-events: none; }
+  .diktwrap { position: relative; }
+  .diktwrap textarea { padding-bottom: 52px; }
+  .mic {
+    position: absolute; right: 8px; bottom: 8px; height: 38px; padding: 0 14px 0 11px; border: 0; border-radius: 19px;
+    background: var(--sort); color: #fff; display: flex; align-items: center; gap: 6px;
+    font-family: var(--kond); font-weight: 700; font-size: 16px;
+  }
+  .mic b { font-weight: 700; }
+  .mic svg { width: 20px; height: 20px; }
+  .mic.aktiv { background: var(--rod); animation: puls 1.2s ease-in-out infinite; }
+  @keyframes puls { 0%, 100% { box-shadow: 0 0 0 0 rgba(200,48,44,.55); } 50% { box-shadow: 0 0 0 8px rgba(200,48,44,0); } }
+  @media (prefers-reduced-motion: reduce) { .mic.aktiv { animation: none; } }
+  #sendlag { z-index: 55; }
+
+  /* ---------- app-følelse ---------- */
+  html { overscroll-behavior-y: contain; }
+  body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  input, textarea, select, .tekstblok, .hero h2 { -webkit-user-select: text; user-select: text; }
+  main > * { animation: inn .22s ease-out both; }
+  @keyframes inn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { main > * { animation: none; } }
+
+  /* ---------- PDF / print ---------- */
+  #printArea { display: none; }
+  @media print {
+    @page { size: A4; margin: 11mm; }
+    html, body { background: #fff !important; }
+    #app, .fab, .bund, .lag, #toast { display: none !important; }
+    #printArea { display: block; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+  .r { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: #1f2a30; font-size: 11pt; }
+  .r-top { background: #1f2a30; color: #fff; padding: 14px 16px 16px; border-radius: 6px 6px 0 0; display: flex; justify-content: space-between; align-items: flex-end; }
+  .r-top .venstre { display: flex; align-items: center; gap: 14px; }
+  .r-logo { background: #fff; border-radius: 5px; padding: 7px 11px; display: flex; align-items: center; }
+  .r-logo img { height: 10mm; width: auto; display: block; }
+  .r-top .t1 { font-family: var(--kond); font-size: 11pt; letter-spacing: 2px; text-transform: uppercase; opacity: .75; }
+  .r-top .t2 { font-family: var(--kond); font-size: 26pt; font-weight: 800; line-height: 1; margin-top: 2px; }
+  .r-top .alv { background: var(--c); color: #fff; font-family: var(--kond); font-weight: 800; font-size: 15pt; padding: 5px 16px; border-radius: 6px; text-transform: uppercase; letter-spacing: 1px; }
+  .r-stribe { height: 9px; background: repeating-linear-gradient(-45deg, #f2b705 0 9px, #1f2a30 9px 18px); margin-bottom: 14px; border-radius: 0 0 3px 3px; }
+  .r h2 { font-size: 20pt; line-height: 1.1; margin: 0 0 10px; font-weight: 800; }
+  .r-kunde { display: grid; grid-template-columns: 1fr 1fr; border: 2px solid #1f2a30; border-radius: 6px; margin-bottom: 12px; }
+  .r-kunde div { padding: 7px 12px 8px; min-width: 0; }
+  .r-kunde div + div { border-left: 2px solid #1f2a30; }
+  .r-kunde small { display: block; font-size: 8pt; text-transform: uppercase; letter-spacing: 1px; color: #6b7880; }
+  .r-kunde b { display: block; font-family: var(--kond); font-size: 16pt; font-weight: 800; line-height: 1.15; overflow-wrap: anywhere; }
+  .r-grid { display: grid; grid-template-columns: repeat(3, 1fr); border: 1.5px solid #d5dbde; border-radius: 6px; margin-bottom: 14px; }
+  .r-grid div { padding: 7px 10px; border-right: 1px solid #d5dbde; border-bottom: 1px solid #d5dbde; }
+  .r-grid div:nth-child(3n) { border-right: 0; }
+  .r-grid div:nth-last-child(-n+3) { border-bottom: 0; }
+  .r-grid small { display: block; font-size: 7.5pt; text-transform: uppercase; letter-spacing: .8px; color: #6b7880; }
+  .r-grid b { font-size: 10.5pt; font-weight: 600; }
+  .r h3 { font-size: 10pt; letter-spacing: 1.2px; text-transform: uppercase; color: #6b7880; border-bottom: 2px solid #f2b705; padding-bottom: 3px; margin: 14px 0 6px; }
+  .r p { margin: 0; white-space: pre-wrap; line-height: 1.45; }
+  .r p.tomt { color: #8b969c; font-style: italic; }
+  .r-fotos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: start; }
+  .r-fotos figure { margin: 0; break-inside: avoid; }
+  .r-fotos img { width: 100%; height: auto; max-height: 110mm; object-fit: contain; background: #eef1f2; border-radius: 4px; display: block; border: 1px solid #d5dbde; }
+  .r-fotos figcaption { font-size: 8pt; color: #6b7880; margin-top: 2px; }
+  .r-sign { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 26px; break-inside: avoid; }
+  .r-sign div { border-top: 1.5px solid #1f2a30; padding-top: 3px; font-size: 8.5pt; color: #6b7880; }
+  .r-fod { margin-top: 14px; font-size: 8pt; color: #8b969c; display: flex; justify-content: space-between; }
+  .r-tal { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+  .r-tal div { border: 1.5px solid #d5dbde; border-radius: 6px; padding: 8px 10px; }
+  .r-tal b { display: block; font-family: var(--kond); font-size: 22pt; line-height: 1; }
+  .r-tal span { font-size: 8.5pt; color: #6b7880; }
+  table.r-tab { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+  .r-tab th { text-align: left; background: #eef1f2; font-size: 8pt; letter-spacing: .8px; text-transform: uppercase; color: #6b7880; padding: 6px 8px; }
+  .r-tab td { padding: 6px 8px; border-bottom: 1px solid #d5dbde; vertical-align: top; }
+  .r-tab tr { break-inside: avoid; }
+  .r-tab .pil { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--c); margin-right: 5px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <button class="ikonknap" id="tilbage" data-act="tilbage" aria-label="Tilbage" hidden>
+      <svg class="i" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h1 id="titel">Afvigelser</h1>
+    <button class="ikonknap" id="menuknap" data-act="menu" aria-label="Menu">
+      <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg>
+    </button>
+  </header>
+  <main id="kropp"></main>
+</div>
+
+<button class="fab" id="fab" data-act="ny">
+  <svg class="i" viewBox="0 0 24 24" style="width:26px;height:26px;stroke-width:2.6"><path d="M12 5v14M5 12h14"/></svg>Ny afvigelse
+</button>
+
+<div id="menulag" class="lag" hidden>
+  <div class="ark">
+    <h3>Menu</h3>
+    <label class="felt"><span>Dit navn (bruges som standard)</span><input type="text" id="menunavn" autocomplete="name"></label>
+    <div class="knapper">
+      <button class="knap gul" data-act="pdf-oversigt">Gem oversigt som PDF</button>
+      <button class="knap gul" id="menuInstaller" data-act="installer" hidden>Installer som app</button>
+      <button class="knap lys" data-act="backup">Hent sikkerhedskopi</button>
+      <button class="knap lys" data-act="gendan">Gendan sikkerhedskopi</button>
+      <button class="knap lys" data-act="luk-menu">Luk</button>
+    </div>
+    <p class="hint">Alt gemmes kun på denne telefon, i browseren. Tag en sikkerhedskopi en gang imellem.</p>
+  </div>
+</div>
+
+<div id="tegn" hidden>
+  <div class="tegn-top">
+    <button class="knap lys" data-act="tegn-annuller">Annullér</button>
+    <span>Markér på foto</span>
+    <button class="knap gul" data-act="tegn-gem">Færdig</button>
+  </div>
+  <div id="tegnOmraade">
+    <canvas id="tegnCv"></canvas>
+    <div class="zoomk">
+      <button data-act="tegn-zoom-plus" aria-label="Zoom ind">+</button>
+      <button data-act="tegn-zoom-minus" aria-label="Zoom ud">−</button>
+      <button id="zoomTal" data-act="tegn-zoom-fit" aria-label="Tilpas til skærm">1×</button>
+    </div>
+  </div>
+  <div id="tegnHint"></div>
+  <div id="tegnTekst" hidden><input type="text" id="tegnInput" maxlength="60" placeholder="Skriv tekst, fx Coil 4711" autocomplete="off"><button class="knap gul" data-act="tegn-tekst-ok">Tilføj</button></div>
+  <div class="tegn-bund">
+    <div class="rk">
+      <button class="vt" data-act="tegn-vaerktoej" data-v="select"><svg class="i" viewBox="0 0 24 24"><path d="M6 3l12 8-5.5 1.6L10 18z"/></svg>Vælg</button>
+      <button class="vt" data-act="tegn-vaerktoej" data-v="pen"><svg class="i" viewBox="0 0 24 24"><path d="M3 17c3-6 5-6 7-2s4 3 7-6 4-2 4-2"/></svg>Frihånd</button>
+      <button class="vt" data-act="tegn-vaerktoej" data-v="arrow"><svg class="i" viewBox="0 0 24 24"><path d="M5 19L19 5M10 5h9v9"/></svg>Pil</button>
+      <button class="vt" data-act="tegn-vaerktoej" data-v="circle"><svg class="i" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="9" ry="6.5"/></svg>Cirkel</button>
+      <button class="vt" data-act="tegn-vaerktoej" data-v="text"><svg class="i" viewBox="0 0 24 24"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></svg>Tekst</button>
+      <button class="vt" data-act="tegn-vaerktoej" data-v="maal"><svg class="i" viewBox="0 0 24 24"><path d="M4 7v10M20 7v10M4 12h16M8 9.5L4 12l4 2.5M16 9.5L20 12l-4 2.5"/></svg>Mål</button>
+    </div>
+    <div class="rk">
+      <button class="farve" data-act="tegn-farve" data-v="#e53935" style="--c:#e53935" aria-label="Rød"></button>
+      <button class="farve" data-act="tegn-farve" data-v="#ffd400" style="--c:#ffd400" aria-label="Gul"></button>
+      <button class="farve" data-act="tegn-farve" data-v="#ffffff" style="--c:#ffffff" aria-label="Hvid"></button>
+      <button class="handl" id="tegnFortryd" data-act="tegn-fortryd"><svg class="i" viewBox="0 0 24 24"><path d="M9 6L4 11l5 5"/><path d="M4 11h9a5 5 0 0 1 0 10h-2"/></svg>Fortryd</button>
+      <button class="handl" id="tegnSlet" data-act="tegn-slet"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>Slet</button>
+      <button class="handl" id="tegnRyd" data-act="tegn-ryd"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>Ryd alt</button>
+    </div>
+  </div>
+</div>
+
+<div id="sendlag" class="lag" hidden>
+  <div class="ark">
+    <h3>Send som PDF på e-mail</h3>
+    <label class="felt"><span>Modtager</span><input type="text" id="sendModtager" inputmode="email" autocomplete="email" placeholder="jhj@ntf.dk"></label>
+    <p class="hint" id="sendStatus" style="margin:0 2px 12px">Laver PDF …</p>
+    <div class="knapper">
+      <button class="knap gul" id="sendDel" data-act="send-del" disabled>Del PDF som vedhæftning</button>
+      <button class="knap" id="sendMail" data-act="send-mail" disabled>Åbn e-mail til modtageren</button>
+      <button class="knap lys" id="sendHent" data-act="send-hent" disabled>Kun hent PDF</button>
+      <button class="knap lys" data-act="send-luk">Luk</button>
+    </div>
+    <p class="hint">“Del PDF” åbner delingsmenuen (fx Gmail eller Outlook) med PDF’en vedhæftet, og adressen kopieres, så du kan sætte den ind i Til-feltet. “Åbn e-mail” udfylder modtager og emne, men PDF’en hentes til Downloads og skal vedhæftes bagefter.</p>
+  </div>
+</div>
+
+<div id="lightbox" class="lag" hidden data-act="luk-box"><img alt="Foto" id="boxbillede"></div>
+<div id="toast" hidden></div>
+<div id="printArea"></div>
+
+<input type="file" id="filKamera" accept="image/*" capture="environment" hidden>
+<input type="file" id="filGalleri" accept="image/*" multiple hidden>
+<input type="file" id="filGendan" accept="application/json,.json" hidden>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- konstanter ---------- */
+  var ALVOR = {
+    lav:     { t: "Lav",     c: "#3a8f5c" },
+    middel:  { t: "Middel",  c: "#d99a00" },
+    hoej:    { t: "Høj",     c: "#e0651a" },
+    kritisk: { t: "Kritisk", c: "#c8302c" }
+  };
+  var STATUS = {
+    aaben:  { t: "Åben",   c: "#c8302c" },
+    igang:  { t: "I gang", c: "#2b6cb0" },
+    lukket: { t: "Lukket", c: "#3a8f5c" }
+  };
+  var KATEGORIER = ["Kvalitet", "Sikkerhed", "Maskine / udstyr", "Materiale / coil", "Emballage / transport", "Andet"];
+  var MAKS_FOTO = 6;
+  var LOGO = "data:image/jpeg;base64,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";
+  var NAVN_KEY = "afvigelser-v2-navn";
+  var LAGER_KEY = "afvigelser-v2-data";
+  var DB_NAVN = "afvigelser-v2-db";
+
+  var ICON = {
+    kamera: '<svg class="i" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+    galleri: '<svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/></svg>',
+    pdf: '<svg class="i" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 14h6M9 17h4"/></svg>',
+    ret: '<svg class="i" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>',
+    slet: '<svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
+    x: '<svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    pen: '<svg class="i" viewBox="0 0 24 24"><path d="M3 17c3-6 5-6 7-2s4 3 7-6 4-2 4-2"/></svg>',
+    mail: '<svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>',
+    mic: '<svg class="i" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
+    soeg: '<svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>',
+    billede: '<svg class="i" viewBox="0 0 24 24" style="width:28px;height:28px"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/></svg>'
+  };
+
+  var TOM_SVG =
+    '<svg viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+    '<rect x="38" y="12" width="84" height="100" rx="8" fill="#fff" stroke="#3a464d" stroke-width="3"/>' +
+    '<rect x="62" y="6" width="36" height="14" rx="5" fill="#3a464d"/>' +
+    '<path d="M80 40l20 34H60z" fill="#f2b705" stroke="#1f2a30" stroke-width="3" stroke-linejoin="round"/>' +
+    '<path d="M80 52v10" stroke="#1f2a30" stroke-width="3.5" stroke-linecap="round"/><circle cx="80" cy="68" r="2.2" fill="#1f2a30"/>' +
+    '<rect x="52" y="84" width="56" height="5" rx="2.5" fill="#d5dbde"/><rect x="52" y="95" width="38" height="5" rx="2.5" fill="#d5dbde"/></svg>';
+
+  /* ---------- tilstand ---------- */
+  var data = { seq: 0, items: [] };
+  var ui = { view: "list", id: null, filter: "alle", q: "" };
+  var draft = null;
+  var kropp = document.getElementById("kropp");
+  var elTitel = document.getElementById("titel");
+  var elTilbage = document.getElementById("tilbage");
+  var elMenuknap = document.getElementById("menuknap");
+  var elFab = document.getElementById("fab");
+
+  /* ---------- hjælpere ---------- */
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function $(id) { return document.getElementById(id); }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function nowLocal() {
+    var d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16);
+  }
+  function fmtTid(s) {
+    if (!s) return "";
+    var d = new Date(s);
+    if (isNaN(d)) return s;
+    return d.toLocaleDateString("da-DK", { day: "numeric", month: "short", year: "numeric" }) +
+      " kl. " + d.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" });
+  }
+  function find(id) {
+    for (var i = 0; i < data.items.length; i++) if (data.items[i].id === id) return data.items[i];
+    return null;
+  }
+  var toastTimer;
+  function toast(msg) {
+    var t = $("toast");
+    t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.hidden = true; }, 2800);
+  }
+  function hentNavn() { try { return localStorage.getItem(NAVN_KEY) || ""; } catch (e) { return ""; } }
+  function gemNavn(n) { try { localStorage.setItem(NAVN_KEY, n); } catch (e) {} }
+
+  /* ---------- lager (IndexedDB, med localStorage som reserve) ---------- */
+  function openDb() {
+    return new Promise(function (res, rej) {
+      var r = indexedDB.open(DB_NAVN, 1);
+      r.onupgradeneeded = function () { r.result.createObjectStore("kv"); };
+      r.onsuccess = function () { res(r.result); };
+      r.onerror = function () { rej(r.error); };
+    });
+  }
+  function indlaes() {
+    return openDb().then(function (db) {
+      return new Promise(function (res, rej) {
+        var q = db.transaction("kv").objectStore("kv").get("data");
+        q.onsuccess = function () { res(q.result || null); };
+        q.onerror = function () { rej(q.error); };
+      });
+    }).catch(function () {
+      try { return JSON.parse(localStorage.getItem(LAGER_KEY) || "null"); } catch (e) { return null; }
+    });
+  }
+  function gemAlt() {
+    return openDb().then(function (db) {
+      return new Promise(function (res, rej) {
+        var tx = db.transaction("kv", "readwrite");
+        tx.objectStore("kv").put(data, "data");
+        tx.oncomplete = res;
+        tx.onerror = function () { rej(tx.error); };
+      });
+    }).catch(function () {
+      try { localStorage.setItem(LAGER_KEY, JSON.stringify(data)); }
+      catch (e) { toast("Kunne ikke gemme – hukommelsen er fuld"); }
+    });
+  }
+
+  /* ---------- visning ---------- */
+  function render() {
+    diktStop();
+    if (ui.view === "list") visListe();
+    else if (ui.view === "form") visForm();
+    else visDetalje();
+    window.scrollTo(0, 0);
+  }
+
+  function setHoved(titel, tilbage) {
+    elTitel.innerHTML = titel;
+    elTilbage.hidden = !tilbage;
+    elMenuknap.hidden = ui.view !== "list";
+    elFab.hidden = ui.view !== "list";
+  }
+
+  function badge(txt, c, udfyldt) {
+    return '<span class="badge' + (udfyldt ? " udfyldt" : "") + '" style="--c:' + c + '">' + esc(txt) + "</span>";
+  }
+
+  function filtreret() {
+    var q = ui.q.trim().toLowerCase();
+    return data.items.filter(function (i) {
+      if (ui.filter !== "alle" && i.status !== ui.filter) return false;
+      if (!q) return true;
+      return [i.titel, i.beskrivelse, i.nr, i.kunde, i.po, i.ref, i.sted, i.af, i.kategori].join(" ").toLowerCase().indexOf(q) >= 0;
+    }).sort(function (a, b) { return (b.tid || "").localeCompare(a.tid || ""); });
+  }
+
+  function taellere() {
+    var t = { alle: data.items.length, aaben: 0, igang: 0, lukket: 0 };
+    data.items.forEach(function (i) { if (t[i.status] != null) t[i.status]++; });
+    return t;
+  }
+
+  function alvorBar() {
+    var aabne = data.items.filter(function (i) { return i.status !== "lukket"; });
+    if (!aabne.length) return "";
+    var tal = { lav: 0, middel: 0, hoej: 0, kritisk: 0 };
+    aabne.forEach(function (i) { if (tal[i.alvor] != null) tal[i.alvor]++; });
+    var bar = "", forklar = "";
+    ["kritisk", "hoej", "middel", "lav"].forEach(function (k) {
+      if (!tal[k]) return;
+      bar += '<i style="width:' + (tal[k] / aabne.length * 100) + "%;background:" + ALVOR[k].c + '"></i>';
+      forklar += '<span style="--c:' + ALVOR[k].c + '">' + ALVOR[k].t + " " + tal[k] + "</span>";
+    });
+    return '<div class="alvorbar"><div class="bar">' + bar + '</div><div class="forklar">' + forklar + "</div></div>";
+  }
+
+  function kortHtml(i) {
+    var a = ALVOR[i.alvor] || ALVOR.lav, s = STATUS[i.status] || STATUS.aaben;
+    var th = i.fotos && i.fotos.length
+      ? '<div class="thumb" style="background-image:url(' + i.fotos[0] + ')"></div>'
+      : '<div class="thumb">' + ICON.billede + "</div>";
+    return '<article class="kort" data-act="aabn" data-id="' + esc(i.id) + '" style="--c:' + a.c + '">' + th +
+      '<div class="tekst"><div class="nr">' + esc(i.nr) + " · " + esc(fmtTid(i.tid)) + "</div>" +
+      "<h3>" + esc(i.titel) + "</h3>" +
+      (i.kunde || i.po ? '<div class="nr" style="margin:-3px 0 6px;color:var(--stal);font-weight:600">' + esc([i.kunde, i.po ? "PO " + i.po : ""].filter(Boolean).join(" · ")) + "</div>" : "") +
+      '<div class="badges">' + badge(a.t, a.c) + badge(s.t, s.c, true) +
+      (i.kategori ? '<span class="badge graa">' + esc(i.kategori) + "</span>" : "") + "</div></div></article>";
+  }
+
+  function listeIndhold() {
+    var items = filtreret();
+    if (!data.items.length) {
+      return '<div class="tom">' + TOM_SVG + "<h3>Ingen afvigelser endnu</h3><p>Tryk på “Ny afvigelse” for at registrere den første, med foto, tidspunkt og beskrivelse.</p></div>";
+    }
+    if (!items.length) return '<div class="tom"><h3>Ingen resultater</h3><p>Prøv et andet filter eller en anden søgning.</p></div>';
+    return items.map(kortHtml).join("");
+  }
+
+  function visListe() {
+    setHoved('Afvigelser<small>Registrering og dokumentation</small>', false);
+    var t = taellere();
+    function flise(k, navn, cls) {
+      return '<button class="flise ' + cls + (ui.filter === k ? " valgt" : "") + '" data-act="filter" data-v="' + k + '"><b>' + t[k] + "</b><span>" + navn + "</span></button>";
+    }
+    kropp.innerHTML =
+      '<div class="fliser">' + flise("alle", "Alle", "") + flise("aaben", "Åbne", "f-aaben") + flise("igang", "I gang", "f-igang") + flise("lukket", "Lukket", "f-lukket") + "</div>" +
+      alvorBar() +
+      '<div class="soeg">' + ICON.soeg + '<input type="search" id="soeg" placeholder="Søg i titel, coilnr., sted …" value="' + esc(ui.q) + '"></div>' +
+      '<div id="liste">' + listeIndhold() + "</div>";
+  }
+
+  /* ---------- formular ---------- */
+  function nyDraft() {
+    return {
+      id: null, titel: "", beskrivelse: "", alvor: "middel", status: "aaben", kategori: KATEGORIER[0],
+      kunde: "", po: "", ref: "", sted: "", af: hentNavn(), tid: nowLocal(), foranstaltning: "", fotos: []
+    };
+  }
+
+  function radioGruppe(navn, map, valgtVaerdi, cls) {
+    var h = '<div class="valg ' + cls + '">';
+    Object.keys(map).forEach(function (k) {
+      h += '<input type="radio" name="' + navn + '" id="' + navn + "-" + k + '" value="' + k + '"' + (valgtVaerdi === k ? " checked" : "") + ">" +
+        '<label for="' + navn + "-" + k + '" style="--c:' + map[k].c + '">' + map[k].t + "</label>";
+    });
+    return h + "</div>";
+  }
+
+  function visForm() {
+    setHoved(draft.id ? "Ret afvigelse" : "Ny afvigelse", true);
+    var kat = KATEGORIER.map(function (k) {
+      return "<option" + (draft.kategori === k ? " selected" : "") + ">" + esc(k) + "</option>";
+    }).join("");
+    kropp.innerHTML =
+      '<div class="blok"><h4>Kunde og ordre</h4>' +
+        '<label class="felt"><span>Kundenavn</span><input type="text" id="f-kunde" maxlength="80" placeholder="Fx “Nordic Steel A/S”" value="' + esc(draft.kunde) + '" autocomplete="off"></label>' +
+        '<label class="felt"><span>Produktionsordre nr.</span><input type="text" id="f-po" maxlength="40" placeholder="Fx 24-10532" value="' + esc(draft.po) + '" autocomplete="off"></label>' +
+      "</div>" +
+      '<div class="blok"><h4>Hvad er sket?</h4>' +
+        '<label class="felt"><span>Titel *</span><input type="text" id="f-titel" maxlength="90" placeholder="Fx “Kantskade på coil”" value="' + esc(draft.titel) + '"></label>' +
+        '<label class="felt"><span>Beskrivelse</span><div class="diktwrap"><textarea id="f-besk" placeholder="Beskriv fejlen så præcist som muligt">' + esc(draft.beskrivelse) + "</textarea>" + micKnap("f-besk") + "</div></label>" +
+      "</div>" +
+      '<div class="blok"><h4>Alvorlighed</h4>' + radioGruppe("alvor", ALVOR, draft.alvor, "fire") + "</div>" +
+      '<div class="blok"><h4>Foto</h4>' +
+        '<div class="knapper"><button class="knap lys" data-act="tag-foto">' + ICON.kamera + 'Tag foto</button><button class="knap lys" data-act="vaelg-foto">' + ICON.galleri + "Fra galleri</button></div>" +
+        '<div class="fotoraekke" id="fotoraekke"></div></div>' +
+      '<div class="blok"><h4>Hvor og hvornår</h4>' +
+        '<label class="felt"><span>Tidspunkt</span><input type="datetime-local" id="f-tid" value="' + esc(draft.tid) + '"></label>' +
+        '<div class="to"><label class="felt"><span>Kategori</span><select id="f-kat">' + kat + "</select></label>" +
+        '<label class="felt"><span>Coil / reference</span><input type="text" id="f-ref" placeholder="Nr." value="' + esc(draft.ref) + '"></label></div>' +
+        '<label class="felt"><span>Sted / maskine</span><input type="text" id="f-sted" placeholder="Fx Hal 2, plads 14" value="' + esc(draft.sted) + '"></label>' +
+        '<label class="felt"><span>Registreret af</span><input type="text" id="f-af" value="' + esc(draft.af) + '" autocomplete="name"></label>' +
+      "</div>" +
+      '<div class="blok"><h4>Foranstaltning og status</h4>' +
+        '<label class="felt"><span>Hvad er gjort / skal gøres?</span><div class="diktwrap"><textarea id="f-fors" placeholder="Fx “Coil spærret, kvalitet informeret”">' + esc(draft.foranstaltning) + "</textarea>" + micKnap("f-fors") + "</div></label>" +
+        radioGruppe("status", STATUS, draft.status, "tre") + "</div>" +
+      '<div class="bund"><div class="knapper"><button class="knap lys" data-act="tilbage">Annullér</button><button class="knap gul" data-act="gem">Gem afvigelse</button></div></div>';
+    tegnFotos();
+  }
+
+  function tegnFotos() {
+    var el = $("fotoraekke");
+    if (!el) return;
+    el.innerHTML = draft.fotos.map(function (f, i) {
+      return '<div class="foto"><img src="' + f + '" alt="Foto ' + (i + 1) + '"><button class="x" data-act="fjern-foto" data-i="' + i + '" aria-label="Fjern foto">' + ICON.x + '</button><button class="pen" data-act="tegn-aabn" data-i="' + i + '" aria-label="Tegn på foto">' + ICON.pen + 'Tegn</button><span class="n">' + (i + 1) + "</span></div>";
+    }).join("");
+  }
+
+  function komprimer(file) {
+    return new Promise(function (res, rej) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        var m = 1400, w = img.naturalWidth, h = img.naturalHeight, s = Math.min(1, m / Math.max(w, h));
+        w = Math.round(w * s); h = Math.round(h * s);
+        var c = document.createElement("canvas"); c.width = w; c.height = h;
+        c.getContext("2d").drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        res(c.toDataURL("image/jpeg", 0.72));
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); rej(new Error("billede")); };
+      img.src = url;
+    });
+  }
+
+  async function tilfoej(files) {
+    for (var i = 0; i < files.length; i++) {
+      if (draft.fotos.length >= MAKS_FOTO) { toast("Maks. " + MAKS_FOTO + " fotos pr. afvigelse"); break; }
+      try { draft.fotos.push(await komprimer(files[i])); }
+      catch (e) { toast("Kunne ikke læse billedet"); }
+    }
+    tegnFotos();
+  }
+
+  function valgt(navn) {
+    var el = document.querySelector('input[name="' + navn + '"]:checked');
+    return el ? el.value : null;
+  }
+
+  async function gem() {
+    var titel = $("f-titel").value.trim();
+    if (!titel) { toast("Skriv en titel"); $("f-titel").focus(); return; }
+    var o = draft;
+    o.titel = titel;
+    o.beskrivelse = $("f-besk").value.trim();
+    o.alvor = valgt("alvor") || "middel";
+    o.status = valgt("status") || "aaben";
+    o.kategori = $("f-kat").value;
+    o.kunde = $("f-kunde").value.trim();
+    o.po = $("f-po").value.trim();
+    o.ref = $("f-ref").value.trim();
+    o.sted = $("f-sted").value.trim();
+    o.af = $("f-af").value.trim();
+    o.tid = $("f-tid").value || nowLocal();
+    o.foranstaltning = $("f-fors").value.trim();
+    o.rettet = Date.now();
+    if (o.af) gemNavn(o.af);
+
+    var ny = !o.id;
+    if (ny) {
+      o.id = uid();
+      data.seq++;
+      o.nr = "AFV-" + String(data.seq).padStart(4, "0");
+      o.oprettet = Date.now();
+      data.items.push(o);
+    } else {
+      for (var i = 0; i < data.items.length; i++) if (data.items[i].id === o.id) data.items[i] = o;
+    }
+    await gemAlt();
+    toast("Afvigelse gemt");
+    ui.id = o.id;
+    if (ny) {
+      draft = null;
+      ui.view = "detail";
+      history.replaceState({ v: "detail" }, "");
+      render();
+    } else {
+      draft = null;
+      history.back();
+    }
+  }
+
+  /* ---------- detalje ---------- */
+  function visDetalje() {
+    var i = find(ui.id);
+    if (!i) { ui.view = "list"; render(); return; }
+    var a = ALVOR[i.alvor] || ALVOR.lav, s = STATUS[i.status] || STATUS.aaben;
+    setHoved(esc(i.nr), true);
+    var statusKnapper = '<div class="knapper" style="grid-template-columns:repeat(3,1fr)">' + Object.keys(STATUS).map(function (k) {
+      return '<button class="knap ' + (i.status === k ? "" : "lys") + '" style="' + (i.status === k ? "background:" + STATUS[k].c : "") + '" data-act="status" data-v="' + k + '">' + STATUS[k].t + "</button>";
+    }).join("") + "</div>";
+    var fotos = i.fotos && i.fotos.length
+      ? '<div class="fotogitter">' + i.fotos.map(function (f, n) {
+          return '<button data-act="vis-foto" data-i="' + n + '"><img src="' + f + '" alt="Foto ' + (n + 1) + '"></button>';
+        }).join("") + "</div>"
+      : '<div class="tekstblok tomt">Ingen fotos</div>';
+    kropp.innerHTML =
+      '<section class="hero" style="--c:' + a.c + '"><div class="badges">' + badge(a.t + " alvor", a.c) + badge(s.t, s.c, true) + "</div>" +
+        "<h2>" + esc(i.titel) + "</h2>" +
+        '<div class="meta"><div><small>Kunde</small>' + esc(i.kunde || "–") + "</div><div><small>Produktionsordre nr.</small>" + esc(i.po || "–") + "</div>" +
+        "<div><small>Tidspunkt</small>" + esc(fmtTid(i.tid)) + "</div><div><small>Registreret af</small>" + esc(i.af || "–") + "</div>" +
+        "<div><small>Kategori</small>" + esc(i.kategori || "–") + "</div><div><small>Coil / reference</small>" + esc(i.ref || "–") + "</div>" +
+        '<div style="grid-column:1/-1"><small>Sted / maskine</small>' + esc(i.sted || "–") + "</div></div></section>" +
+      '<div class="blok"><h4>Beskrivelse</h4><div class="tekstblok' + (i.beskrivelse ? "" : " tomt") + '">' + (i.beskrivelse ? esc(i.beskrivelse) : "Ingen beskrivelse") + "</div></div>" +
+      '<div class="blok"><h4>Foranstaltning</h4><div class="tekstblok' + (i.foranstaltning ? "" : " tomt") + '">' + (i.foranstaltning ? esc(i.foranstaltning) : "Ingen foranstaltning noteret") + "</div></div>" +
+      '<div class="blok"><h4>Foto (' + (i.fotos ? i.fotos.length : 0) + ")</h4>" + fotos + "</div>" +
+      '<div class="blok"><h4>Skift status</h4>' + statusKnapper + "</div>" +
+      '<div class="knapper"><button class="knap gul bred" data-act="pdf">' + ICON.pdf + "Gem som PDF</button>" +
+      '<button class="knap bred" data-act="send">' + ICON.mail + "Send som PDF på e-mail</button>" +
+      '<button class="knap lys" data-act="rediger">' + ICON.ret + 'Ret</button><button class="knap rod" data-act="slet">' + ICON.slet + "Slet</button></div>";
+  }
+
+  /* ---------- PDF (via udskrift) ---------- */
+  function idag() {
+    return new Date().toLocaleDateString("da-DK", { day: "numeric", month: "long", year: "numeric" });
+  }
+
+  function rapportHtml(i) {
+    var a = ALVOR[i.alvor] || ALVOR.lav, s = STATUS[i.status] || STATUS.aaben;
+    var fotos = (i.fotos && i.fotos.length)
+      ? '<div class="r-fotos">' + i.fotos.map(function (f, n) {
+          return '<figure><img src="' + f + '" alt=""><figcaption>Foto ' + (n + 1) + " af " + i.fotos.length + "</figcaption></figure>";
+        }).join("") + "</div>"
+      : '<p class="tomt">Ingen fotos vedhæftet</p>';
+    return '<div class="r" style="--c:' + a.c + '">' +
+      '<div class="r-top"><div class="venstre"><div class="r-logo"><img src="' + LOGO + '" alt="NTF"></div><div><div class="t1">Afvigelsesrapport</div><div class="t2">' + esc(i.nr) + '</div></div></div><div class="alv">' + esc(a.t) + " alvor</div></div>" +
+      '<div class="r-stribe"></div>' +
+      '<div class="r-kunde"><div><small>Kunde</small><b>' + esc(i.kunde || "–") + "</b></div><div><small>Produktionsordre nr.</small><b>" + esc(i.po || "–") + "</b></div></div>" +
+      "<h2>" + esc(i.titel) + "</h2>" +
+      '<div class="r-grid">' +
+        "<div><small>Tidspunkt</small><b>" + esc(fmtTid(i.tid)) + "</b></div>" +
+        "<div><small>Registreret af</small><b>" + esc(i.af || "–") + "</b></div>" +
+        "<div><small>Status</small><b>" + esc(s.t) + "</b></div>" +
+        "<div><small>Kategori</small><b>" + esc(i.kategori || "–") + "</b></div>" +
+        "<div><small>Coil / reference</small><b>" + esc(i.ref || "–") + "</b></div>" +
+        "<div><small>Sted / maskine</small><b>" + esc(i.sted || "–") + "</b></div>" +
+      "</div>" +
+      "<h3>Beskrivelse</h3><p" + (i.beskrivelse ? "" : ' class="tomt"') + ">" + (i.beskrivelse ? esc(i.beskrivelse) : "Ingen beskrivelse") + "</p>" +
+      "<h3>Foranstaltning</h3><p" + (i.foranstaltning ? "" : ' class="tomt"') + ">" + (i.foranstaltning ? esc(i.foranstaltning) : "Ingen foranstaltning noteret") + "</p>" +
+      "<h3>Fotodokumentation</h3>" + fotos +
+      '<div class="r-sign"><div>Registreret af</div><div>Godkendt af</div><div>Dato</div></div>' +
+      '<div class="r-fod"><span>' + esc(i.nr) + "</span><span>Udskrevet " + esc(idag()) + "</span></div></div>";
+  }
+
+  function oversigtHtml() {
+    var items = filtreret(), t = { aaben: 0, igang: 0, lukket: 0 };
+    items.forEach(function (i) { if (t[i.status] != null) t[i.status]++; });
+    var filterNavn = ui.filter === "alle" ? "Alle afvigelser" : STATUS[ui.filter].t + " afvigelser";
+    var rows = items.map(function (i) {
+      var a = ALVOR[i.alvor] || ALVOR.lav, s = STATUS[i.status] || STATUS.aaben;
+      return "<tr><td>" + esc(i.nr) + "</td><td>" + esc(fmtTid(i.tid)) + "</td><td><b>" + esc(i.titel) + "</b>" +
+        (function () { var l = [i.kunde, i.po ? "PO " + i.po : "", i.sted].filter(Boolean).join(" · "); return l ? "<br><span style='color:#6b7880'>" + esc(l) + "</span>" : ""; })() + '</td><td><span class="pil" style="--c:' + a.c + '"></span>' + esc(a.t) +
+        '</td><td><span class="pil" style="--c:' + s.c + '"></span>' + esc(s.t) + "</td></tr>";
+    }).join("");
+    return '<div class="r" style="--c:#f2b705">' +
+      '<div class="r-top"><div class="venstre"><div class="r-logo"><img src="' + LOGO + '" alt="NTF"></div><div><div class="t1">Oversigt</div><div class="t2">Afvigelser</div></div></div><div class="alv" style="background:#f2b705;color:#1f2a30">' + esc(filterNavn) + "</div></div>" +
+      '<div class="r-stribe"></div>' +
+      '<div class="r-tal"><div><b>' + items.length + "</b><span>I alt</span></div><div><b style='color:#c8302c'>" + t.aaben + "</b><span>Åbne</span></div><div><b style='color:#2b6cb0'>" + t.igang + "</b><span>I gang</span></div><div><b style='color:#3a8f5c'>" + t.lukket + "</b><span>Lukket</span></div></div>" +
+      '<table class="r-tab"><thead><tr><th>Nr.</th><th>Tidspunkt</th><th>Afvigelse</th><th>Alvor</th><th>Status</th></tr></thead><tbody>' + rows + "</tbody></table>" +
+      '<div class="r-fod"><span>' + items.length + " afvigelser</span><span>Udskrevet " + esc(idag()) + "</span></div></div>";
+  }
+
+  function udskriv(html, filnavn) {
+    $("printArea").innerHTML = html;
+    var gammel = document.title;
+    document.title = filnavn.replace(/[\\\/:*?"<>|]/g, "").slice(0, 80);
+    function efter() {
+      document.title = gammel;
+      $("printArea").innerHTML = "";
+      window.removeEventListener("afterprint", efter);
+    }
+    window.addEventListener("afterprint", efter);
+    setTimeout(function () { window.print(); }, 250);
+  }
+
+  /* ---------- sikkerhedskopi ---------- */
+  function hentBackup() {
+    var blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "afvigelser-" + nowLocal().slice(0, 10) + ".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+    toast("Sikkerhedskopi hentet");
+  }
+
+  async function gendan(file) {
+    try {
+      var d = JSON.parse(await file.text());
+      if (!d || !Array.isArray(d.items)) throw new Error("format");
+      var tilfojet = 0;
+      d.items.forEach(function (i) { if (i && i.id && !find(i.id)) { data.items.push(i); tilfojet++; } });
+      data.seq = Math.max(data.seq, d.seq || 0);
+      await gemAlt();
+      toast(tilfojet + " afvigelser gendannet");
+      lukMenu(); ui.view = "list"; render();
+    } catch (e) { toast("Filen kunne ikke læses"); }
+  }
+
+  /* ---------- menu ---------- */
+  function aabnMenu() { $("menunavn").value = hentNavn(); $("menulag").hidden = false; }
+  function lukMenu() {
+    var n = $("menunavn").value.trim();
+    if (n) gemNavn(n);
+    $("menulag").hidden = true;
+  }
+
+  /* ---------- navigation ---------- */
+  function gaaTil(view, id) {
+    ui.view = view; ui.id = id || null;
+    history.pushState({ v: view }, "");
+    render();
+  }
+
+  window.addEventListener("popstate", function () {
+    if (!$("sendlag").hidden) { $("sendlag").hidden = true; sendTok++; send = null; }
+    if (tegn) { afslutTegn(); return; }
+    if (ui.view === "form" && draft && draft.id) { ui.view = "detail"; ui.id = draft.id; }
+    else if (ui.view === "form" && !draft && ui.id) { ui.view = "detail"; }
+    else ui.view = "list";
+    draft = null;
+    render();
+  });
+
+  /* ---------- tegneværktøj ---------- */
+  var tCv = $("tegnCv"), tCtx = tCv.getContext("2d");
+  var tArea = $("tegnOmraade");
+  var tegn = null;
+  var ptrs = {};
+  var FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+
+  function aabnTegn(i) {
+    var img = new Image();
+    img.onload = function () {
+      tCv.width = img.naturalWidth; tCv.height = img.naturalHeight;
+      tegn = {
+        i: i, img: img, strokes: [], hist: [], tool: "pen", color: "#e53935", cur: null, gem: false,
+        sel: null, drag: null, pinch: null, ignore: false, edit: null, pend: null, pendM: null, dragText: false,
+        z: 1, tx: 0, ty: 0, bw: 0, bh: 0, ox: 0, oy: 0,
+        lw: Math.max(4, Math.round(Math.max(img.naturalWidth, img.naturalHeight) / 170))
+      };
+      ptrs = {};
+      $("tegn").hidden = false;
+      history.pushState({ v: "tegn" }, "");
+      tegnFit(); tegnTegn(); tegnUI();
+    };
+    img.src = draft.fotos[i];
+  }
+
+  function snap() {
+    tegn.hist.push(JSON.stringify(tegn.strokes));
+    if (tegn.hist.length > 60) tegn.hist.shift();
+  }
+
+  /* --- visning: tilpasning, zoom og panorering --- */
+  function tegnFit() {
+    if (!tegn) return;
+    var aw = tArea.clientWidth, ah = tArea.clientHeight;
+    var sc = Math.min((aw - 16) / tCv.width, (ah - 16) / tCv.height);
+    tegn.bw = Math.max(50, Math.floor(tCv.width * sc));
+    tegn.bh = Math.max(50, Math.floor(tCv.height * sc));
+    tegn.ox = Math.round((aw - tegn.bw) / 2);
+    tegn.oy = Math.round((ah - tegn.bh) / 2);
+    tCv.style.width = tegn.bw + "px"; tCv.style.height = tegn.bh + "px";
+    tCv.style.left = tegn.ox + "px"; tCv.style.top = tegn.oy + "px";
+    tegnVis();
+  }
+  window.addEventListener("resize", tegnFit);
+
+  function tegnVis() {
+    if (!tegn) return;
+    var aw = tArea.clientWidth, ah = tArea.clientHeight, z = tegn.z;
+    tegn.tx = Math.min(aw - 60 - tegn.ox, Math.max(60 - tegn.ox - tegn.bw * z, tegn.tx));
+    tegn.ty = Math.min(ah - 60 - tegn.oy, Math.max(60 - tegn.oy - tegn.bh * z, tegn.ty));
+    tCv.style.transform = "translate(" + tegn.tx + "px," + tegn.ty + "px) scale(" + z + ")";
+    $("zoomTal").textContent = (Math.round(z * 10) / 10) + "×";
+  }
+
+  function lokal(cx, cy) {
+    var r = tArea.getBoundingClientRect();
+    return { x: cx - r.left, y: cy - r.top };
+  }
+
+  function tegnZoomOm(nyZ, lx, ly) {
+    var z0 = tegn.z;
+    nyZ = Math.max(1, Math.min(10, nyZ));
+    var ux = (lx - tegn.ox - tegn.tx) / z0, uy = (ly - tegn.oy - tegn.ty) / z0;
+    tegn.z = nyZ;
+    tegn.tx = lx - tegn.ox - ux * nyZ;
+    tegn.ty = ly - tegn.oy - uy * nyZ;
+    tegnVis(); tegnTegn();
+  }
+
+  function pinchStart() {
+    var id = Object.keys(ptrs), a = ptrs[id[0]], b = ptrs[id[1]];
+    var m = lokal((a.x + b.x) / 2, (a.y + b.y) / 2);
+    tegn.pinch = {
+      d0: Math.max(10, Math.hypot(a.x - b.x, a.y - b.y)), z0: tegn.z,
+      ux: (m.x - tegn.ox - tegn.tx) / tegn.z, uy: (m.y - tegn.oy - tegn.ty) / tegn.z
+    };
+  }
+  function pinchMove() {
+    var id = Object.keys(ptrs), a = ptrs[id[0]], b = ptrs[id[1]], pi = tegn.pinch;
+    var m = lokal((a.x + b.x) / 2, (a.y + b.y) / 2);
+    var z = Math.max(1, Math.min(10, pi.z0 * Math.hypot(a.x - b.x, a.y - b.y) / pi.d0));
+    tegn.z = z;
+    tegn.tx = m.x - tegn.ox - pi.ux * z;
+    tegn.ty = m.y - tegn.oy - pi.uy * z;
+    tegnVis(); tegnTegn();
+  }
+
+  function tegnStreg(s) {
+    var c = tCtx;
+    c.save();
+    c.strokeStyle = s.c; c.fillStyle = s.c; c.lineWidth = s.lw; c.lineCap = "round"; c.lineJoin = "round";
+    c.shadowColor = "rgba(0,0,0,.45)"; c.shadowBlur = s.lw * 0.8;
+    if (s.t === "pen") {
+      c.beginPath();
+      if (s.pts.length === 1) { c.arc(s.pts[0].x, s.pts[0].y, s.lw / 2, 0, Math.PI * 2); c.fill(); }
+      else {
+        c.moveTo(s.pts[0].x, s.pts[0].y);
+        for (var i = 1; i < s.pts.length; i++) c.lineTo(s.pts[i].x, s.pts[i].y);
+        c.stroke();
+      }
+    } else if (s.t === "arrow") {
+      var dx = s.b.x - s.a.x, dy = s.b.y - s.a.y, len = Math.sqrt(dx * dx + dy * dy);
+      if (len > 1) {
+        var ang = Math.atan2(dy, dx), hl = Math.min(s.lw * 5.5, len * 0.6);
+        c.beginPath();
+        c.moveTo(s.a.x, s.a.y);
+        c.lineTo(s.b.x - Math.cos(ang) * hl * 0.6, s.b.y - Math.sin(ang) * hl * 0.6);
+        c.stroke();
+        c.beginPath();
+        c.moveTo(s.b.x, s.b.y);
+        c.lineTo(s.b.x - hl * Math.cos(ang - 0.45), s.b.y - hl * Math.sin(ang - 0.45));
+        c.lineTo(s.b.x - hl * Math.cos(ang + 0.45), s.b.y - hl * Math.sin(ang + 0.45));
+        c.closePath(); c.fill();
+      }
+    } else if (s.t === "circle") {
+      var rx = Math.abs(s.b.x - s.a.x) / 2, ry = Math.abs(s.b.y - s.a.y) / 2;
+      if (rx > 1 && ry > 1) {
+        c.beginPath();
+        c.ellipse((s.a.x + s.b.x) / 2, (s.a.y + s.b.y) / 2, rx, ry, 0, 0, Math.PI * 2);
+        c.stroke();
+      }
+    } else if (s.t === "maal") {
+      var mx = s.b.x - s.a.x, my = s.b.y - s.a.y, ml = Math.sqrt(mx * mx + my * my);
+      if (ml > 1) {
+        var ma = Math.atan2(my, mx), nx = -Math.sin(ma), ny = Math.cos(ma), tk = s.lw * 3.5;
+        c.beginPath();
+        c.moveTo(s.a.x, s.a.y); c.lineTo(s.b.x, s.b.y);
+        c.moveTo(s.a.x + nx * tk, s.a.y + ny * tk); c.lineTo(s.a.x - nx * tk, s.a.y - ny * tk);
+        c.moveTo(s.b.x + nx * tk, s.b.y + ny * tk); c.lineTo(s.b.x - nx * tk, s.b.y - ny * tk);
+        c.stroke();
+        if (s.txt) {
+          var msz = s.lw * 4.6, rot = ma;
+          if (rot > Math.PI / 2 || rot < -Math.PI / 2) rot += Math.PI;
+          c.shadowBlur = 0;
+          c.translate((s.a.x + s.b.x) / 2, (s.a.y + s.b.y) / 2);
+          c.rotate(rot);
+          c.font = "800 " + msz + "px system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+          c.textAlign = "center"; c.textBaseline = "bottom";
+          c.lineWidth = Math.max(3, msz / 6);
+          c.strokeStyle = "rgba(0,0,0,.85)";
+          c.strokeText(s.txt, 0, -s.lw * 1.8);
+          c.fillText(s.txt, 0, -s.lw * 1.8);
+        }
+      }
+    } else if (s.t === "text") {
+      c.shadowBlur = 0;
+      c.font = "800 " + s.sz + "px system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+      c.textBaseline = "middle"; c.textAlign = "left";
+      c.lineWidth = Math.max(3, s.sz / 6);
+      c.strokeStyle = "rgba(0,0,0,.85)";
+      c.strokeText(s.txt, s.x, s.y);
+      c.fillText(s.txt, s.x, s.y);
+    }
+    c.restore();
+  }
+
+  /* --- markering, ramme og træf --- */
+  function tegnK() {
+    var r = tCv.getBoundingClientRect();
+    return r.width ? tCv.width / r.width : 1;
+  }
+  function segAfst(p, a, b) {
+    var dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy;
+    var t = l2 ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2)) : 0;
+    return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+  }
+  function tekstBox(s) {
+    tCtx.save();
+    tCtx.font = "800 " + s.sz + "px " + FONT;
+    var w = tCtx.measureText(s.txt || "").width;
+    tCtx.restore();
+    return { x: s.x, y: s.y - s.sz / 2, w: Math.max(w, s.sz), h: s.sz };
+  }
+  function tegnBBox(s) {
+    var i, x1, y1, x2, y2, pad;
+    if (s.t === "pen") {
+      x1 = x2 = s.pts[0].x; y1 = y2 = s.pts[0].y;
+      for (i = 1; i < s.pts.length; i++) {
+        x1 = Math.min(x1, s.pts[i].x); x2 = Math.max(x2, s.pts[i].x);
+        y1 = Math.min(y1, s.pts[i].y); y2 = Math.max(y2, s.pts[i].y);
+      }
+      pad = s.lw / 2;
+    } else if (s.t === "text") {
+      var b = tekstBox(s);
+      return { x1: b.x, y1: b.y, x2: b.x + b.w, y2: b.y + b.h };
+    } else {
+      x1 = Math.min(s.a.x, s.b.x); x2 = Math.max(s.a.x, s.b.x);
+      y1 = Math.min(s.a.y, s.b.y); y2 = Math.max(s.a.y, s.b.y);
+      pad = s.t === "maal" ? s.lw * 3.5 : s.lw * 2;
+    }
+    return { x1: x1 - pad, y1: y1 - pad, x2: x2 + pad, y2: y2 + pad };
+  }
+  function tegnMarkering(s) {
+    var k = tegnK(), c = tCtx, bb = tegnBBox(s), m = 6 * k;
+    c.save();
+    c.setLineDash([8 * k, 6 * k]); c.lineWidth = 2 * k; c.strokeStyle = "#4db6ff";
+    c.strokeRect(bb.x1 - m, bb.y1 - m, bb.x2 - bb.x1 + 2 * m, bb.y2 - bb.y1 + 2 * m);
+    c.setLineDash([]);
+    if (s.a && s.b) {
+      [s.a, s.b].forEach(function (q) {
+        c.beginPath(); c.arc(q.x, q.y, 9 * k, 0, Math.PI * 2);
+        c.fillStyle = "#fff"; c.fill();
+        c.lineWidth = 2.5 * k; c.strokeStyle = "#0b6fb8"; c.stroke();
+      });
+    }
+    c.restore();
+  }
+  function tegnTraf(p, tol) {
+    for (var i = tegn.strokes.length - 1; i >= 0; i--) {
+      var s = tegn.strokes[i], t = tol + s.lw / 2, ok = false, j;
+      if (s.t === "pen") {
+        if (s.pts.length === 1) ok = Math.hypot(p.x - s.pts[0].x, p.y - s.pts[0].y) <= t;
+        else for (j = 1; j < s.pts.length && !ok; j++) ok = segAfst(p, s.pts[j - 1], s.pts[j]) <= t;
+      } else if (s.t === "arrow") {
+        ok = segAfst(p, s.a, s.b) <= t;
+      } else if (s.t === "maal") {
+        ok = segAfst(p, s.a, s.b) <= t + s.lw * 2;
+      } else if (s.t === "circle") {
+        var rx = Math.abs(s.b.x - s.a.x) / 2, ry = Math.abs(s.b.y - s.a.y) / 2;
+        if (rx > 1 && ry > 1) {
+          var d = Math.hypot((p.x - (s.a.x + s.b.x) / 2) / rx, (p.y - (s.a.y + s.b.y) / 2) / ry);
+          ok = Math.abs(d - 1) * Math.min(rx, ry) <= t;
+        }
+      } else if (s.t === "text") {
+        var bx = tekstBox(s);
+        ok = p.x >= bx.x - tol && p.x <= bx.x + bx.w + tol && p.y >= bx.y - tol && p.y <= bx.y + bx.h + tol;
+      }
+      if (ok) return i;
+    }
+    return -1;
+  }
+  function flyttet(o, dx, dy) {
+    var s = JSON.parse(JSON.stringify(o));
+    if (s.pts) s.pts.forEach(function (q) { q.x += dx; q.y += dy; });
+    if (s.a) { s.a.x += dx; s.a.y += dy; }
+    if (s.b) { s.b.x += dx; s.b.y += dy; }
+    if (s.x != null) { s.x += dx; s.y += dy; }
+    return s;
+  }
+
+  /* --- tegning af hele billedet --- */
+  function tegnTegn(eksport) {
+    if (!tegn) return;
+    tCtx.drawImage(tegn.img, 0, 0, tCv.width, tCv.height);
+    tegn.strokes.forEach(function (s, i) {
+      if (tegn.edit === i && !eksport) tegnStreg(Object.assign({}, s, { txt: $("tegnInput").value }));
+      else tegnStreg(s);
+    });
+    if (eksport) return;
+    if (tegn.cur) tegnStreg(tegn.cur);
+    if (tegn.pendM) tegnStreg({ t: "maal", c: tegn.pendM.c, lw: tegn.pendM.lw, a: tegn.pendM.a, b: tegn.pendM.b, txt: $("tegnInput").value });
+    if (tegn.pend) {
+      var v = $("tegnInput").value;
+      if (v.trim()) tegnStreg({ t: "text", c: tegn.color, x: tegn.pend.x, y: tegn.pend.y, txt: v, sz: tegn.lw * 5, lw: tegn.lw });
+      else {
+        tCtx.save();
+        tCtx.strokeStyle = tegn.color; tCtx.lineWidth = tegn.lw / 2;
+        tCtx.beginPath();
+        tCtx.moveTo(tegn.pend.x - tegn.lw * 2, tegn.pend.y); tCtx.lineTo(tegn.pend.x + tegn.lw * 2, tegn.pend.y);
+        tCtx.moveTo(tegn.pend.x, tegn.pend.y - tegn.lw * 2); tCtx.lineTo(tegn.pend.x, tegn.pend.y + tegn.lw * 2);
+        tCtx.stroke(); tCtx.restore();
+      }
+    }
+    if (tegn.sel != null && tegn.strokes[tegn.sel]) tegnMarkering(tegn.strokes[tegn.sel]);
+  }
+
+  function tegnUI() {
+    if (!tegn) return;
+    document.querySelectorAll("#tegn .vt").forEach(function (b) { b.classList.toggle("aktiv", b.getAttribute("data-v") === tegn.tool); });
+    document.querySelectorAll("#tegn .farve").forEach(function (b) { b.classList.toggle("aktiv", b.getAttribute("data-v") === tegn.color); });
+    var venter = !!(tegn.pend || tegn.pendM || tegn.edit != null);
+    $("tegnFortryd").disabled = tegn.hist.length === 0 && !venter;
+    $("tegnSlet").disabled = tegn.sel == null;
+    $("tegnRyd").disabled = tegn.strokes.length === 0;
+    var h = "Knib med to fingre for at zoome og flytte billedet";
+    if (tegn.tool === "select") {
+      var sv = tegn.sel != null ? tegn.strokes[tegn.sel] : null;
+      if (!sv) h = "Tryk på en tegning for at vælge den · træk på tomt sted for at flytte billedet";
+      else {
+        h = "Træk for at flytte";
+        if (sv.a && sv.b) h += " · træk i prikkerne for at ændre";
+        if (sv.t === "text" || sv.t === "maal") h += " · tryk igen for at rette teksten";
+      }
+    }
+    $("tegnHint").textContent = h;
+  }
+
+  function tegnPos(e) {
+    var r = tCv.getBoundingClientRect();
+    return { x: (e.clientX - r.left) * tCv.width / r.width, y: (e.clientY - r.top) * tCv.height / r.height };
+  }
+
+  /* --- pegehændelser --- */
+  tArea.addEventListener("pointerdown", function (e) {
+    if (!tegn) return;
+    if (e.target.closest && e.target.closest(".zoomk")) return;
+    e.preventDefault();
+    try { tArea.setPointerCapture(e.pointerId); } catch (x) {}
+    ptrs[e.pointerId] = { x: e.clientX, y: e.clientY };
+    var n = Object.keys(ptrs).length;
+    if (n >= 2) {
+      tegn.cur = null; tegn.drag = null; tegn.dragText = false; tegn.ignore = true;
+      if (n === 2) pinchStart();
+      tegnTegn();
+      return;
+    }
+    tegn.ignore = false;
+    var p = tegnPos(e), k = tegnK();
+    if (tegn.pendM || tegn.edit != null) tegnTekstOk();
+
+    if (tegn.tool === "select") {
+      var s0 = tegn.sel != null ? tegn.strokes[tegn.sel] : null;
+      if (s0 && s0.a && s0.b) {
+        var hh = null, th = 20 * k;
+        if (Math.hypot(p.x - s0.a.x, p.y - s0.a.y) <= th) hh = "a";
+        else if (Math.hypot(p.x - s0.b.x, p.y - s0.b.y) <= th) hh = "b";
+        if (hh) {
+          tegn.drag = { kind: "handle", h: hh, i: tegn.sel, orig: JSON.parse(JSON.stringify(s0)), snapped: false };
+          tegnTegn(); return;
+        }
+      }
+      var idx = tegnTraf(p, 16 * k);
+      if (idx >= 0) {
+        var was = tegn.sel === idx;
+        tegn.sel = idx;
+        tegn.drag = { kind: "move", i: idx, start: p, orig: JSON.parse(JSON.stringify(tegn.strokes[idx])), moved: false, was: was };
+      } else {
+        tegn.sel = null;
+        tegn.drag = { kind: "pan", lx: e.clientX, ly: e.clientY };
+      }
+      tegnUI(); tegnTegn();
+      return;
+    }
+
+    tegn.sel = null;
+    if (tegn.tool === "text") {
+      $("tegnInput").placeholder = "Skriv tekst, fx Coil 4711";
+      tegn.pend = p; tegn.dragText = true;
+      $("tegnTekst").hidden = false;
+      tegnFit(); tegnTegn(); tegnUI();
+      return;
+    }
+    tegn.cur = tegn.tool === "pen"
+      ? { t: "pen", c: tegn.color, lw: tegn.lw, pts: [p] }
+      : { t: tegn.tool, c: tegn.color, lw: tegn.lw, a: p, b: p };
+    tegnTegn();
+  });
+
+  tArea.addEventListener("pointermove", function (e) {
+    if (!tegn) return;
+    if (ptrs[e.pointerId]) ptrs[e.pointerId] = { x: e.clientX, y: e.clientY };
+    if (tegn.pinch && Object.keys(ptrs).length >= 2) { e.preventDefault(); pinchMove(); return; }
+    if (tegn.ignore) return;
+    if (tegn.dragText) { e.preventDefault(); tegn.pend = tegnPos(e); tegnTegn(); return; }
+    var d = tegn.drag;
+    if (d) {
+      e.preventDefault();
+      if (d.kind === "pan") {
+        tegn.tx += e.clientX - d.lx; tegn.ty += e.clientY - d.ly;
+        d.lx = e.clientX; d.ly = e.clientY;
+        tegnVis(); return;
+      }
+      var q = tegnPos(e);
+      if (d.kind === "move") {
+        var dx = q.x - d.start.x, dy = q.y - d.start.y;
+        if (!d.moved) {
+          if (Math.hypot(dx, dy) < 5 * tegnK()) return;
+          d.moved = true; snap();
+        }
+        tegn.strokes[d.i] = flyttet(d.orig, dx, dy);
+        tegnTegn(); return;
+      }
+      if (d.kind === "handle") {
+        if (!d.snapped) { snap(); d.snapped = true; }
+        var ns = JSON.parse(JSON.stringify(d.orig));
+        ns[d.h] = q;
+        tegn.strokes[d.i] = ns;
+        tegnTegn(); return;
+      }
+    }
+    if (!tegn.cur) return;
+    e.preventDefault();
+    var p = tegnPos(e);
+    if (tegn.cur.t === "pen") tegn.cur.pts.push(p); else tegn.cur.b = p;
+    tegnTegn();
+  });
+
+  function tegnSlip(e) {
+    if (!tegn) return;
+    delete ptrs[e.pointerId];
+    var n = Object.keys(ptrs).length;
+    if (tegn.pinch && n < 2) tegn.pinch = null;
+    if (tegn.ignore) { if (n === 0) tegn.ignore = false; return; }
+
+    if (tegn.dragText) { tegn.dragText = false; $("tegnInput").focus(); return; }
+
+    var d = tegn.drag; tegn.drag = null;
+    if (d) {
+      if (d.kind === "move" && !d.moved && d.was) {
+        var st = tegn.strokes[d.i];
+        if (st && (st.t === "text" || st.t === "maal")) tegnRet(d.i);
+      }
+      tegnUI(); tegnTegn();
+      return;
+    }
+
+    if (!tegn.cur) return;
+    var s = tegn.cur; tegn.cur = null;
+    var ok = true;
+    if (s.t !== "pen") { var dx = s.b.x - s.a.x, dy = s.b.y - s.a.y; ok = Math.sqrt(dx * dx + dy * dy) > tegn.lw * 2; }
+    if (ok && s.t === "maal") {
+      tegn.pendM = s;
+      $("tegnInput").placeholder = "Mål, fx 120 mm";
+      $("tegnTekst").hidden = false;
+      tegnFit(); tegnTegn(); tegnUI();
+      $("tegnInput").focus();
+      return;
+    }
+    if (ok) { snap(); tegn.strokes.push(s); }
+    tegnTegn(); tegnUI();
+  }
+  tArea.addEventListener("pointerup", tegnSlip);
+  tArea.addEventListener("pointercancel", tegnSlip);
+
+  tArea.addEventListener("wheel", function (e) {
+    if (!tegn) return;
+    e.preventDefault();
+    var l = lokal(e.clientX, e.clientY);
+    tegnZoomOm(tegn.z * Math.exp(-e.deltaY * 0.0018), l.x, l.y);
+  }, { passive: false });
+
+  /* --- tekst og mål: indtastning --- */
+  $("tegnInput").addEventListener("input", function () { tegnTegn(); });
+  $("tegnInput").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); tegnTekstOk(); } });
+
+  function tegnRet(i) {
+    var st = tegn.strokes[i];
+    tegn.edit = i;
+    $("tegnInput").value = st.txt || "";
+    $("tegnInput").placeholder = st.t === "maal" ? "Mål, fx 120 mm" : "Skriv tekst, fx Coil 4711";
+    $("tegnTekst").hidden = false;
+    tegnFit(); tegnTegn(); tegnUI();
+    $("tegnInput").focus();
+  }
+
+  function tegnTekstOk() {
+    if (!tegn || (tegn.edit == null && !tegn.pend && !tegn.pendM)) return;
+    var v = $("tegnInput").value.trim();
+    if (tegn.edit != null) {
+      var st = tegn.strokes[tegn.edit];
+      if (st) {
+        if (st.t === "text" && !v) { snap(); tegn.strokes.splice(tegn.edit, 1); tegn.sel = null; }
+        else if (v !== (st.txt || "")) { snap(); st.txt = v; }
+      }
+    } else if (tegn.pendM) {
+      snap();
+      tegn.strokes.push({ t: "maal", c: tegn.pendM.c, lw: tegn.pendM.lw, a: tegn.pendM.a, b: tegn.pendM.b, txt: v });
+    } else if (v) {
+      snap();
+      tegn.strokes.push({ t: "text", c: tegn.color, x: tegn.pend.x, y: tegn.pend.y, txt: v, sz: tegn.lw * 5, lw: tegn.lw });
+    }
+    tegnAfbrydTekst();
+    tegnUI();
+  }
+  function tegnAfbrydTekst() {
+    if (tegn) { tegn.pend = null; tegn.pendM = null; tegn.edit = null; tegn.dragText = false; }
+    $("tegnInput").value = "";
+    $("tegnTekst").hidden = true;
+    tegnFit();
+    tegnTegn();
+  }
+
+  function afslutTegn() {
+    if (tegn.gem) {
+      tegnTekstOk();
+      tegn.cur = null; tegn.sel = null;
+      tegnTegn(true);
+      draft.fotos[tegn.i] = tCv.toDataURL("image/jpeg", 0.82);
+      tegnFotos();
+    }
+    tegn = null; ptrs = {};
+    $("tegnInput").value = "";
+    $("tegnTekst").hidden = true;
+    $("tegn").hidden = true;
+  }
+
+  function tegnAkt(act, el) {
+    if (act === "tegn-aabn") { aabnTegn(parseInt(el.getAttribute("data-i"), 10)); return; }
+    if (!tegn) return;
+    var mx = tArea.clientWidth / 2, my = tArea.clientHeight / 2;
+    if (act === "tegn-vaerktoej") {
+      var nytV = el.getAttribute("data-v");
+      if ((tegn.pend || tegn.pendM || tegn.edit != null) && nytV !== tegn.tool) tegnAfbrydTekst();
+      if (nytV !== "select") tegn.sel = null;
+      tegn.tool = nytV;
+      tegnTegn();
+    }
+    else if (act === "tegn-farve") {
+      tegn.color = el.getAttribute("data-v");
+      if (tegn.pendM) tegn.pendM.c = tegn.color;
+      if (tegn.sel != null && tegn.strokes[tegn.sel] && tegn.strokes[tegn.sel].c !== tegn.color) { snap(); tegn.strokes[tegn.sel].c = tegn.color; }
+      tegnTegn();
+    }
+    else if (act === "tegn-tekst-ok") tegnTekstOk();
+    else if (act === "tegn-fortryd") {
+      if (tegn.pend || tegn.pendM || tegn.edit != null) tegnAfbrydTekst();
+      else if (tegn.hist.length) { tegn.strokes = JSON.parse(tegn.hist.pop()); tegn.sel = null; tegnTegn(); }
+    }
+    else if (act === "tegn-slet") {
+      if (tegn.sel != null && tegn.strokes[tegn.sel]) { snap(); tegn.strokes.splice(tegn.sel, 1); tegn.sel = null; tegnTegn(); }
+    }
+    else if (act === "tegn-ryd") {
+      if (tegn.strokes.length) { snap(); tegn.strokes = []; tegn.sel = null; tegnTegn(); }
+    }
+    else if (act === "tegn-zoom-plus") tegnZoomOm(tegn.z * 1.6, mx, my);
+    else if (act === "tegn-zoom-minus") tegnZoomOm(tegn.z / 1.6, mx, my);
+    else if (act === "tegn-zoom-fit") { tegn.z = 1; tegn.tx = 0; tegn.ty = 0; tegnVis(); tegnTegn(); }
+    else if (act === "tegn-gem") { tegn.gem = true; history.back(); return; }
+    else if (act === "tegn-annuller") { tegn.gem = false; history.back(); return; }
+    tegnUI();
+  }
+
+  /* ---------- rigtig PDF-fil (til e-mail) ---------- */
+  var PK = 150 / 25.4;        // pixel pr. mm ved 150 dpi
+  var PT = 0.3528;            // mm pr. punkt
+  var SIDE_B = 210, SIDE_H = 297, MARG = 11, BRED = 188, BUND = 280;
+  var SKRIFT = "system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif";
+  var KOND = "'Roboto Condensed', 'Arial Narrow', " + SKRIFT;
+
+  function indlaesBillede(src) {
+    return new Promise(function (res) {
+      var im = new Image();
+      im.onload = function () { res(im); };
+      im.onerror = function () { res(null); };
+      im.src = src;
+    });
+  }
+
+  function b64TilBytes(b64) {
+    var bin = atob(b64), out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  function byggPdf(sider) {
+    var enc = new TextEncoder(), dele = [], pos = 0, offs = [];
+    function put(x) { var b = typeof x === "string" ? enc.encode(x) : x; dele.push(b); pos += b.length; }
+    var W = 595.28, H = 841.89, n = sider.length, total = 2 + 3 * n;
+    put("%PDF-1.4\n");
+    put(new Uint8Array([37, 226, 227, 207, 211, 10]));
+    offs[1] = pos; put("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
+    var kids = [];
+    for (var k = 0; k < n; k++) kids.push((3 + 3 * k) + " 0 R");
+    offs[2] = pos; put("2 0 obj\n<< /Type /Pages /Kids [" + kids.join(" ") + "] /Count " + n + " >>\nendobj\n");
+    for (var j = 0; j < n; j++) {
+      var po = 3 + 3 * j, co = po + 1, io = po + 2;
+      offs[po] = pos;
+      put(po + " 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + W + " " + H + "] /Resources << /XObject << /Im0 " + io + " 0 R >> >> /Contents " + co + " 0 R >>\nendobj\n");
+      var cs = "q " + W + " 0 0 " + H + " 0 0 cm /Im0 Do Q";
+      offs[co] = pos;
+      put(co + " 0 obj\n<< /Length " + cs.length + " >>\nstream\n" + cs + "\nendstream\nendobj\n");
+      offs[io] = pos;
+      put(io + " 0 obj\n<< /Type /XObject /Subtype /Image /Width " + sider[j].w + " /Height " + sider[j].h + " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " + sider[j].bytes.length + " >>\nstream\n");
+      put(sider[j].bytes);
+      put("\nendstream\nendobj\n");
+    }
+    var xref = pos;
+    var x = "xref\n0 " + (total + 1) + "\n0000000000 65535 f \n";
+    for (var o = 1; o <= total; o++) x += ("0000000000" + offs[o]).slice(-10) + " 00000 n \n";
+    put(x);
+    put("trailer\n<< /Size " + (total + 1) + " /Root 1 0 R >>\nstartxref\n" + xref + "\n%%EOF\n");
+    return new Blob(dele, { type: "application/pdf" });
+  }
+
+  async function pdfRapport(i) {
+    var a = ALVOR[i.alvor] || ALVOR.lav, st = STATUS[i.status] || STATUS.aaben;
+    var sider = [], cv, c, y;
+    var logoIm = await indlaesBillede(LOGO);
+    var fotoIm = [];
+    for (var f = 0; f < (i.fotos || []).length; f++) fotoIm.push(await indlaesBillede(i.fotos[f]));
+
+    function skrift(pt, vaegt, fam, kursiv) {
+      c.font = (kursiv ? "italic " : "") + vaegt + " " + (pt * PT) + "px " + fam;
+    }
+    function spatiering(mm) { if ("letterSpacing" in c) c.letterSpacing = mm ? mm + "px" : "0px"; }
+    function tekst(txt, x, yy, pt, vaegt, farve, fam, align, ls, kursiv) {
+      skrift(pt, vaegt, fam || SKRIFT, kursiv); spatiering(ls || 0);
+      c.fillStyle = farve; c.textAlign = align || "left";
+      c.fillText(txt, x, yy);
+      spatiering(0);
+    }
+    function rr(x, yy, w, h, r) {
+      var tl, tr, br, bl;
+      if (typeof r === "number") { tl = tr = br = bl = r; } else { tl = r[0]; tr = r[1]; br = r[2]; bl = r[3]; }
+      c.beginPath();
+      c.moveTo(x + tl, yy);
+      c.arcTo(x + w, yy, x + w, yy + h, tr);
+      c.arcTo(x + w, yy + h, x, yy + h, br);
+      c.arcTo(x, yy + h, x, yy, bl);
+      c.arcTo(x, yy, x + w, yy, tl);
+      c.closePath();
+    }
+    function tilpas(txt, maxW, pt, vaegt, fam, minPt) {
+      txt = String(txt);
+      while (pt > minPt) { skrift(pt, vaegt, fam); if (c.measureText(txt).width <= maxW) break; pt -= 0.5; }
+      skrift(pt, vaegt, fam);
+      if (c.measureText(txt).width > maxW) {
+        while (txt.length > 1 && c.measureText(txt + "…").width > maxW) txt = txt.slice(0, -1);
+        txt += "…";
+      }
+      return { t: txt, pt: pt };
+    }
+    function ombryd(txt, maxW, pt, vaegt, fam) {
+      skrift(pt, vaegt, fam);
+      var linjer = [];
+      String(txt).split(/\r?\n/).forEach(function (afs) {
+        if (!afs.trim()) { linjer.push(""); return; }
+        var lin = "";
+        afs.split(/\s+/).forEach(function (o) {
+          if (!o) return;
+          while (c.measureText(o).width > maxW) {
+            var k = o.length;
+            while (k > 1 && c.measureText(o.slice(0, k)).width > maxW) k--;
+            if (lin) { linjer.push(lin); lin = ""; }
+            linjer.push(o.slice(0, k)); o = o.slice(k);
+          }
+          var t = lin ? lin + " " + o : o;
+          if (c.measureText(t).width <= maxW) lin = t; else { linjer.push(lin); lin = o; }
+        });
+        linjer.push(lin);
+      });
+      return linjer;
+    }
+
+    function tegnTop() {
+      var x0 = MARG, y0 = MARG, h = 23;
+      c.fillStyle = "#1f2a30"; rr(x0, y0, BRED, h, [2, 2, 0, 0]); c.fill();
+      var lh = 10, lw = logoIm ? lh * logoIm.width / logoIm.height : 24;
+      var cw = lw + 4.8, ch = lh + 4.8, cx = x0 + 4, cy = y0 + (h - ch) / 2;
+      c.fillStyle = "#fff"; rr(cx, cy, cw, ch, 1.4); c.fill();
+      if (logoIm) c.drawImage(logoIm, cx + 2.4, cy + 2.4, lw, lh);
+      var tx = cx + cw + 5;
+      tekst("AFVIGELSESRAPPORT", tx, y0 + 9, 9, 500, "rgba(255,255,255,.75)", KOND, "left", 0.5);
+      tekst(i.nr, tx, y0 + 18.6, 22, 800, "#fff", KOND);
+      var bt = (a.t + " alvor").toUpperCase();
+      skrift(12, 800, KOND); spatiering(0.3);
+      var bw = c.measureText(bt).width + 8, bh = 9, bx = x0 + BRED - 4 - bw, by = y0 + (h - bh) / 2;
+      spatiering(0);
+      c.fillStyle = a.c; rr(bx, by, bw, bh, 1.6); c.fill();
+      tekst(bt, bx + bw / 2, by + 6.3, 12, 800, "#fff", KOND, "center", 0.3);
+      // advarselsstriber
+      var ys = y0 + h, sh = 3.2;
+      c.save();
+      c.beginPath(); c.rect(x0, ys, BRED, sh); c.clip();
+      c.fillStyle = "#f2b705"; c.fillRect(x0, ys, BRED, sh);
+      c.fillStyle = "#1f2a30";
+      for (var sx = x0 - 5; sx < x0 + BRED + 5; sx += 6.4) {
+        c.beginPath();
+        c.moveTo(sx, ys + sh); c.lineTo(sx + sh, ys); c.lineTo(sx + sh + 3.2, ys); c.lineTo(sx + 3.2, ys + sh);
+        c.closePath(); c.fill();
+      }
+      c.restore();
+      return ys + sh + 4;
+    }
+
+    function nySide(forste) {
+      cv = document.createElement("canvas");
+      cv.width = Math.round(SIDE_B * PK); cv.height = Math.round(SIDE_H * PK);
+      c = cv.getContext("2d");
+      c.setTransform(PK, 0, 0, PK, 0, 0);
+      c.fillStyle = "#fff"; c.fillRect(0, 0, SIDE_B, SIDE_H);
+      c.textBaseline = "alphabetic";
+      sider.push(cv);
+      if (forste) y = tegnTop();
+      else {
+        c.fillStyle = "#1f2a30"; rr(MARG, MARG, BRED, 8, 1.5); c.fill();
+        var l = [i.nr, i.po ? "PO " + i.po : "", i.kunde || ""].filter(Boolean).join("  ·  ");
+        tekst(l, MARG + 4, MARG + 5.5, 8.5, 700, "#fff", KOND);
+        y = MARG + 8 + 7;
+      }
+    }
+    function sikr(h) { if (y + h > BUND) nySide(false); }
+
+    function afsnit(titel) {
+      sikr(16);
+      y += 3;
+      tekst(titel.toUpperCase(), MARG, y + 3.4, 8.5, 700, "#6b7880", SKRIFT, "left", 0.3);
+      c.strokeStyle = "#f2b705"; c.lineWidth = 0.7;
+      c.beginPath(); c.moveTo(MARG, y + 5.4); c.lineTo(MARG + BRED, y + 5.4); c.stroke();
+      y += 9;
+    }
+    function afsnitTekst(txt, tom) {
+      var pt = 10.5, lh = pt * PT * 1.45;
+      var ind = txt ? txt : tom;
+      var linjer = ombryd(ind, BRED, pt, 400, SKRIFT);
+      linjer.forEach(function (l) {
+        sikr(lh);
+        if (l) tekst(l, MARG, y + lh * 0.75, pt, 400, txt ? "#1f2a30" : "#8b969c", SKRIFT, "left", 0, !txt);
+        y += lh;
+      });
+      y += 1;
+    }
+
+    nySide(true);
+
+    // kunde og produktionsordre
+    (function () {
+      var h = 15, x0 = MARG, half = BRED / 2;
+      c.strokeStyle = "#1f2a30"; c.lineWidth = 0.5;
+      rr(x0, y, BRED, h, 1.8); c.stroke();
+      c.beginPath(); c.moveTo(x0 + half, y); c.lineTo(x0 + half, y + h); c.stroke();
+      [["Kunde", i.kunde || "–"], ["Produktionsordre nr.", i.po || "–"]].forEach(function (par, k) {
+        var x = x0 + k * half + 3.5;
+        tekst(par[0].toUpperCase(), x, y + 4.6, 6.5, 500, "#6b7880", SKRIFT, "left", 0.25);
+        var fit = tilpas(par[1], half - 7, 16, 800, KOND, 8);
+        tekst(fit.t, x, y + 11.6, fit.pt, 800, "#1f2a30", KOND);
+      });
+      y += h + 5;
+    })();
+
+    // titel
+    (function () {
+      var pt = 20, lh = pt * PT * 1.15;
+      ombryd(i.titel, BRED, pt, 800, KOND).forEach(function (l) {
+        sikr(lh);
+        tekst(l, MARG, y + lh * 0.8, pt, 800, "#1f2a30", KOND);
+        y += lh;
+      });
+      y += 3;
+    })();
+
+    // oplysninger
+    (function () {
+      var rowH = 11.5, colW = BRED / 3;
+      sikr(rowH * 2 + 6);
+      var celler = [
+        ["Tidspunkt", fmtTid(i.tid)], ["Registreret af", i.af || "–"], ["Status", st.t],
+        ["Kategori", i.kategori || "–"], ["Coil / reference", i.ref || "–"], ["Sted / maskine", i.sted || "–"]
+      ];
+      c.strokeStyle = "#d5dbde"; c.lineWidth = 0.25;
+      c.beginPath();
+      c.moveTo(MARG + colW, y); c.lineTo(MARG + colW, y + rowH * 2);
+      c.moveTo(MARG + colW * 2, y); c.lineTo(MARG + colW * 2, y + rowH * 2);
+      c.moveTo(MARG, y + rowH); c.lineTo(MARG + BRED, y + rowH);
+      c.stroke();
+      c.lineWidth = 0.45;
+      rr(MARG, y, BRED, rowH * 2, 1.5); c.stroke();
+      celler.forEach(function (ce, k) {
+        var x = MARG + (k % 3) * colW + 3, yy = y + Math.floor(k / 3) * rowH;
+        tekst(ce[0].toUpperCase(), x, yy + 4.2, 6, 500, "#6b7880", SKRIFT, "left", 0.2);
+        var fit = tilpas(ce[1], colW - 6, 9.5, 600, SKRIFT, 6.5);
+        tekst(fit.t, x, yy + 9, fit.pt, 600, "#1f2a30", SKRIFT);
+      });
+      y += rowH * 2 + 3;
+    })();
+
+    afsnit("Beskrivelse");
+    afsnitTekst(i.beskrivelse, "Ingen beskrivelse");
+    afsnit("Foranstaltning");
+    afsnitTekst(i.foranstaltning, "Ingen foranstaltning noteret");
+    afsnit("Fotodokumentation");
+
+    if (!fotoIm.length) afsnitTekst("", "Ingen fotos vedhæftet");
+    else {
+      var kolW = (BRED - 8) / 2, MAKS_H = 110;
+      for (var r = 0; r < fotoIm.length; r += 2) {
+        var mal = [];
+        for (var q = r; q < Math.min(r + 2, fotoIm.length); q++) {
+          var im = fotoIm[q], w = kolW, h = kolW * 0.75;
+          if (im) { h = w * im.height / im.width; if (h > MAKS_H) { h = MAKS_H; w = h * im.width / im.height; } }
+          mal.push({ im: im, w: w, h: h, nr: q });
+        }
+        var raekkeH = Math.max.apply(null, mal.map(function (m) { return m.h; }));
+        sikr(raekkeH + 8);
+        mal.forEach(function (m, k) {
+          var x = MARG + k * (kolW + 8);
+          c.fillStyle = "#eef1f2"; c.fillRect(x, y, kolW, m.h);
+          if (m.im) c.drawImage(m.im, x + (kolW - m.w) / 2, y, m.w, m.h);
+          c.strokeStyle = "#d5dbde"; c.lineWidth = 0.3; c.strokeRect(x, y, kolW, m.h);
+          tekst("Foto " + (m.nr + 1) + " af " + fotoIm.length, x, y + m.h + 3.6, 7, 400, "#6b7880", SKRIFT);
+        });
+        y += raekkeH + 8;
+      }
+    }
+
+    // underskrifter
+    sikr(24);
+    y += 12;
+    (function () {
+      var bw = (BRED - 32) / 3;
+      ["Registreret af", "Godkendt af", "Dato"].forEach(function (t, k) {
+        var x = MARG + k * (bw + 16);
+        c.strokeStyle = "#1f2a30"; c.lineWidth = 0.4;
+        c.beginPath(); c.moveTo(x, y); c.lineTo(x + bw, y); c.stroke();
+        tekst(t, x, y + 4, 8, 400, "#6b7880", SKRIFT);
+      });
+    })();
+
+    // fodlinje på alle sider
+    var dato = idag();
+    sider.forEach(function (sc, k) {
+      c = sc.getContext("2d");
+      tekst(i.nr, MARG, 290, 7, 400, "#8b969c", SKRIFT);
+      tekst("Udskrevet " + dato + "  ·  Side " + (k + 1) + " af " + sider.length, MARG + BRED, 290, 7, 400, "#8b969c", SKRIFT, "right");
+    });
+
+    var jpgs = sider.map(function (sc) {
+      return { bytes: b64TilBytes(sc.toDataURL("image/jpeg", 0.86).split(",")[1]), w: sc.width, h: sc.height };
+    });
+    return byggPdf(jpgs);
+  }
+
+  /* ---------- send som e-mail ---------- */
+  var MODT_KEY = "afvigelser-v2-modtager";
+  var sendTok = 0, send = null;
+
+  function hentModtager() { try { return localStorage.getItem(MODT_KEY) || "jhj@ntf.dk"; } catch (e) { return "jhj@ntf.dk"; } }
+  function gemModtager(v) { try { localStorage.setItem(MODT_KEY, v); } catch (e) {} }
+  function gyldigMail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v); }
+  function pdfNavn(it) { return [it.nr, it.po, it.kunde, it.titel].filter(Boolean).join(" ").replace(/[\\\/:*?"<>|]/g, "").slice(0, 80); }
+  function mailEmne(it) { return "Afvigelse " + [it.nr, it.po ? "PO " + it.po : "", it.kunde, it.titel].filter(Boolean).join(" – "); }
+  function mailTekst(it) {
+    var a = ALVOR[it.alvor] || ALVOR.lav;
+    var l = ["Hej,", "", "Vedhæftet er afvigelsesrapport " + it.nr + ".", ""];
+    if (it.kunde) l.push("Kunde: " + it.kunde);
+    if (it.po) l.push("Produktionsordre: " + it.po);
+    l.push("Titel: " + it.titel, "Alvor: " + a.t, "", "Venlig hilsen");
+    var n = hentNavn(); if (n) l.push(n);
+    return l.join("\n");
+  }
+  function sendKnapper(til) {
+    ["sendDel", "sendMail", "sendHent"].forEach(function (id) { $(id).disabled = !til; });
+  }
+  function hentFil() {
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(send.blob);
+    a.download = send.fil.name;
+    document.body.appendChild(a); a.click(); a.remove();
+    var u = a.href;
+    setTimeout(function () { URL.revokeObjectURL(u); }, 4000);
+  }
+
+  function sendAabn() {
+    var it = find(ui.id);
+    if (!it) return;
+    var tok = ++sendTok;
+    send = { item: it, klar: false, fil: null, blob: null };
+    $("sendModtager").value = hentModtager();
+    $("sendStatus").textContent = "Laver PDF …";
+    sendKnapper(false);
+    $("sendlag").hidden = false;
+    pdfRapport(it).then(function (blob) {
+      if (tok !== sendTok || !send) return;
+      send.blob = blob;
+      try { send.fil = new File([blob], pdfNavn(it) + ".pdf", { type: "application/pdf" }); }
+      catch (e) { send.fil = { name: pdfNavn(it) + ".pdf" }; }
+      send.klar = true;
+      $("sendStatus").textContent = "PDF klar · " + Math.max(1, Math.round(blob.size / 1024)) + " kB";
+      sendKnapper(true);
+    }).catch(function () {
+      if (tok !== sendTok) return;
+      $("sendStatus").textContent = "PDF’en kunne ikke laves. Brug “Gem som PDF” i stedet.";
+    });
+  }
+
+  function sendAkt(act) {
+    if (act === "send") { sendAabn(); return; }
+    if (act === "send-luk") { $("sendlag").hidden = true; sendTok++; send = null; return; }
+    if (!send || !send.klar) return;
+    var adr = $("sendModtager").value.trim();
+    if (adr) gemModtager(adr);
+    var it = send.item;
+
+    if (act === "send-hent") { hentFil(); toast("PDF hentet"); return; }
+
+    if (act === "send-del") {
+      if (adr && gyldigMail(adr) && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(adr).catch(function () {});
+      }
+      if (navigator.canShare && send.fil instanceof File && navigator.canShare({ files: [send.fil] })) {
+        navigator.share({ files: [send.fil], title: mailEmne(it), text: mailTekst(it) }).catch(function (e) {
+          if (e && e.name !== "AbortError") toast("Kunne ikke dele. Brug “Åbn e-mail” eller “Kun hent PDF”");
+        });
+      } else {
+        toast("Denne browser kan ikke dele filer. Brug “Åbn e-mail” eller “Kun hent PDF”");
+      }
+      return;
+    }
+
+    if (act === "send-mail") {
+      if (!gyldigMail(adr)) { toast("Skriv en gyldig e-mailadresse"); $("sendModtager").focus(); return; }
+      hentFil();
+      var body = mailTekst(it) + "\n\n(PDF’en er hentet til Downloads. Vedhæft den, før du sender.)";
+      var url = "mailto:" + adr + "?subject=" + encodeURIComponent(mailEmne(it)) + "&body=" + encodeURIComponent(body);
+      toast("PDF hentet. Vedhæft den i mailen");
+      setTimeout(function () { window.location.href = url; }, 700);
+    }
+  }
+  $("sendlag").addEventListener("click", function (e) {
+    if (e.target.id === "sendlag") { $("sendlag").hidden = true; sendTok++; send = null; }
+  });
+
+  /* ---------- tale til tekst ---------- */
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var dikt = null;
+
+  function micKnap(id) {
+    return '<button type="button" class="mic" data-act="dikter" data-for="' + id + '" aria-pressed="false" aria-label="Dikter med stemmen">' + ICON.mic + "<b>Dikter</b></button>";
+  }
+
+  function diktKommandoer(t) {
+    return t
+      .replace(/\s*\bny linje\b\s*/gi, "\n")
+      .replace(/\s*\bnyt afsnit\b\s*/gi, "\n\n")
+      .replace(/\s*\bspørgsmålstegn\b/gi, "?")
+      .replace(/\s*\budråbstegn\b/gi, "!")
+      .replace(/\s*\bpunktum\b/gi, ".")
+      .replace(/\s*\bkomma\b/gi, ",")
+      .replace(/\s*\bkolon\b/gi, ":");
+  }
+  function diktKapital(t, base) {
+    if (!base || /(^|[.!?]\s*|\n\s*)$/.test(base)) t = t.replace(/^(\s*)([a-zæøå])/, function (m, a, b) { return a + b.toUpperCase(); });
+    return t.replace(/([.!?]\s+|\n\s*)([a-zæøå])/g, function (m, a, b) { return a + b.toUpperCase(); });
+  }
+  function diktKnap(btn, til) {
+    if (!btn) return;
+    btn.classList.toggle("aktiv", til);
+    btn.setAttribute("aria-pressed", til ? "true" : "false");
+    var b = btn.querySelector("b");
+    if (b) b.textContent = til ? "Stop" : "Dikter";
+  }
+  function diktStop() {
+    if (!dikt) return;
+    dikt.kor = false;
+    diktKnap(dikt.btn, false);
+    try { dikt.rec.stop(); } catch (e) {}
+  }
+
+  function dikter(btn) {
+    var id = btn.getAttribute("data-for"), ta = $(id);
+    if (!ta) return;
+    if (!SR) {
+      ta.focus();
+      toast("Tale til tekst virker ikke i denne browser. Brug mikrofonen på tastaturet i stedet");
+      return;
+    }
+    if (dikt && dikt.kor) { var samme = dikt.id === id; diktStop(); if (samme) return; }
+
+    var rec = new SR();
+    rec.lang = "da-DK"; rec.continuous = true; rec.interimResults = true;
+    var d = { rec: rec, ta: ta, btn: btn, id: id, base: "", kor: true, tomme: 0, fik: false };
+    function saetBase() { d.base = ta.value; if (d.base && !/\s$/.test(d.base)) d.base += " "; }
+    saetBase();
+    dikt = d;
+
+    rec.onresult = function (e) {
+      if (dikt !== d) return;
+      d.fik = true;
+      var f = "", m = "";
+      for (var i = 0; i < e.results.length; i++) {
+        var t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) f += (f && !/^\s/.test(t) && !/\s$/.test(f) ? " " : "") + t;
+        else m += (m && !/^\s/.test(t) ? " " : "") + t;
+      }
+      var dict = diktKapital(diktKommandoer(f), d.base);
+      if (!d.base || /\s$/.test(d.base)) dict = dict.replace(/^[ \t]+/, "");
+      var ekstra = m ? ((dict && !/^\s/.test(m) ? " " : "") + m) : "";
+      ta.value = d.base + dict + ekstra;
+      ta.scrollTop = ta.scrollHeight;
+    };
+    rec.onerror = function (e) {
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") { toast("Mikrofonen er ikke tilladt. Giv adgang i browserens indstillinger"); d.kor = false; }
+      else if (e.error === "network") { toast("Tale til tekst kræver internet"); d.kor = false; }
+      else if (e.error === "language-not-supported") { toast("Dansk understøttes ikke af denne browser"); d.kor = false; }
+    };
+    rec.onend = function () {
+      if (dikt !== d) return;
+      if (d.kor) {
+        d.tomme = d.fik ? 0 : d.tomme + 1;
+        if (d.tomme < 2) {
+          d.fik = false; saetBase();
+          try { rec.start(); return; } catch (x) {}
+        }
+      }
+      diktKnap(btn, false);
+      dikt = null;
+    };
+    diktKnap(btn, true);
+    try { rec.start(); }
+    catch (x) { diktKnap(btn, false); dikt = null; toast("Kunne ikke starte mikrofonen"); }
+  }
+
+  /* ---------- app-installation ---------- */
+  var installEv = null;
+  function erApp() {
+    return (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+  }
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    installEv = e;
+    if (!erApp()) $("menuInstaller").hidden = false;
+  });
+  window.addEventListener("appinstalled", function () {
+    installEv = null;
+    $("menuInstaller").hidden = true;
+    toast("Appen er installeret");
+  });
+  function installer() {
+    if (!installEv) { toast("Åbn Chromes menu (⋮) og vælg “Installer app” eller “Føj til startskærm”"); return; }
+    lukMenu();
+    installEv.prompt();
+    installEv.userChoice.then(function () { installEv = null; $("menuInstaller").hidden = true; });
+  }
+
+  /* ---------- hændelser ---------- */
+  document.addEventListener("click", async function (e) {
+    var el = e.target.closest("[data-act]");
+    if (!el) return;
+    var act = el.getAttribute("data-act");
+    var id = el.getAttribute("data-id");
+
+    if (act === "luk-box") { $("lightbox").hidden = true; return; }
+    if (act === "dikter") { dikter(el); return; }
+    if (act.indexOf("send") === 0) { sendAkt(act); return; }
+    if (act.indexOf("tegn-") === 0) { tegnAkt(act, el); return; }
+    if (act === "menu") aabnMenu();
+    else if (act === "luk-menu") lukMenu();
+    else if (act === "ny") { draft = nyDraft(); gaaTil("form"); }
+    else if (act === "aabn") gaaTil("detail", id);
+    else if (act === "tilbage") history.back();
+    else if (act === "filter") { ui.filter = el.getAttribute("data-v"); visListe(); }
+    else if (act === "tag-foto") $("filKamera").click();
+    else if (act === "vaelg-foto") $("filGalleri").click();
+    else if (act === "fjern-foto") { draft.fotos.splice(parseInt(el.getAttribute("data-i"), 10), 1); tegnFotos(); }
+    else if (act === "gem") gem();
+    else if (act === "vis-foto") {
+      var it = find(ui.id), n = parseInt(el.getAttribute("data-i"), 10);
+      if (it && it.fotos[n]) { $("boxbillede").src = it.fotos[n]; $("lightbox").hidden = false; }
+    }
+    else if (act === "status") {
+      var cur = find(ui.id);
+      if (cur) {
+        cur.status = el.getAttribute("data-v"); cur.rettet = Date.now();
+        await gemAlt();
+        var y = window.scrollY; visDetalje(); window.scrollTo(0, y);
+      }
+    }
+    else if (act === "rediger") {
+      var orig = find(ui.id);
+      if (orig) { draft = JSON.parse(JSON.stringify(orig)); gaaTil("form", orig.id); }
+    }
+    else if (act === "slet") {
+      var del = find(ui.id);
+      if (del && confirm("Slet " + del.nr + " “" + del.titel + "”? Det kan ikke fortrydes.")) {
+        data.items = data.items.filter(function (x) { return x.id !== del.id; });
+        await gemAlt();
+        toast("Afvigelse slettet");
+        history.back();
+      }
+    }
+    else if (act === "pdf") {
+      var p = find(ui.id);
+      if (p) { toast("Vælg “Gem som PDF” i udskriftsvinduet"); udskriv(rapportHtml(p), [p.nr, p.po, p.kunde, p.titel].filter(Boolean).join(" ")); }
+    }
+    else if (act === "pdf-oversigt") {
+      lukMenu();
+      if (!data.items.length) { toast("Der er ingen afvigelser endnu"); return; }
+      toast("Vælg “Gem som PDF” i udskriftsvinduet");
+      udskriv(oversigtHtml(), "Afvigelser oversigt");
+    }
+    else if (act === "installer") installer();
+    else if (act === "backup") hentBackup();
+    else if (act === "gendan") $("filGendan").click();
+  });
+
+  document.addEventListener("input", function (e) {
+    if (e.target.id === "soeg") {
+      ui.q = e.target.value;
+      var l = $("liste"); if (l) l.innerHTML = listeIndhold();
+    }
+  });
+
+  $("filKamera").addEventListener("change", function (e) { tilfoej(e.target.files); e.target.value = ""; });
+  $("filGalleri").addEventListener("change", function (e) { tilfoej(e.target.files); e.target.value = ""; });
+  $("filGendan").addEventListener("change", function (e) { if (e.target.files[0]) gendan(e.target.files[0]); e.target.value = ""; });
+  $("menulag").addEventListener("click", function (e) { if (e.target.id === "menulag") lukMenu(); });
+
+  /* ---------- start ---------- */
+  indlaes().then(function (d) {
+    if (d && Array.isArray(d.items)) data = d;
+    history.replaceState({ v: "list" }, "");
+    render();
+
+    // genvej fra ikonet på startskærmen: "Ny afvigelse"
+    if (/[?&]ny=1\b/.test(location.search)) {
+      history.replaceState({ v: "list" }, "", location.pathname);
+      draft = nyDraft();
+      gaaTil("form");
+    }
+
+    // offline-understøttelse og opdateringer
+    if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+      var harStyring = !!navigator.serviceWorker.controller;
+      navigator.serviceWorker.addEventListener("controllerchange", function () {
+        if (harStyring) toast("Appen er opdateret. Luk og åbn den igen for at bruge den nyeste version");
+        harStyring = true;
+      });
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+    }
+  });
+})();
+</script>
+</body>
+</html>
